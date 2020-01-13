@@ -12,15 +12,12 @@ function adguard(log, config) {
   this.log = log;
   global.log = log;
 
-  this.manufacturer = config["manufacturer"] || "My manufacturer";
-  this.model = config["model"] || "My model";
-  this.serial = config["serial-number"] || "123-456-789";
+  this.manufacturer = config["manufacturer"] || "AdGuard";
   this.name = config["name"] || "AdGuardHome";
 
   this.username = config["username"];
   this.password = config["password"];
   this.host = config["host"] || "localhost";
-  this.time = config["time"] || 0;
   this.port = config["port"] || 80;
 
   const auth = Buffer.from(`${this.username}:${this.password}`).toString(
