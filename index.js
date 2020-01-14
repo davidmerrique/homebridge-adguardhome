@@ -20,14 +20,14 @@ function adguard(log, config) {
   this.host = config["host"] || "localhost";
   this.port = config["port"] || 80;
 
-  const auth = Buffer.from(`${this.username}:${this.password}`).toString(
-    "base64"
-  );
+  const Authorization = `Basic ${Buffer.from(
+    `${this.username}:${this.password}`
+  ).toString("base64")}`;
 
   this.gotInstance = got.extend({
     prefixUrl: "http://" + this.host + ":" + this.port + "/control",
     headers: {
-      Authorization: `Basic ${auth}`
+      Authorization
     },
     responseType: "json"
   });
