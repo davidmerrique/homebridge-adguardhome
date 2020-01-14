@@ -4,7 +4,7 @@
   "description": "AdGuard Home plugin for Homebridge",
   "main": "index.js",
   "license": "MIT",
-  "keywords": ["homebridge-plugin"],
+  "keywords": ["homebridge-plugin", "adguard", "homebridge", "homekit"],
   "repository": {
     "type": "git",
     "url": "git://github.com/davidmerrique/homebridge-adguardhome.git"
