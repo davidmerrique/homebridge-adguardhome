@@ -13,7 +13,7 @@ function adguard(log, config) {
   global.log = log;
 
   this.manufacturer = "AdGuard";
-  this.name = "AdGuardHome";
+  this.name = config["name"] || "AdGuardHome";
 
   this.username = config["username"];
   this.password = config["password"];

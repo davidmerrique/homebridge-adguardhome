@@ -27,6 +27,12 @@
         "title": "Password",
         "type": "string",
         "required": false
+      },
+      "name": {
+        "title": "HomeKit Name",
+        "type": "string",
+        "required": false,
+        "default": "AdGuard Home"
       }
     }
   }
