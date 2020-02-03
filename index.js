@@ -12,8 +12,8 @@ function adguard(log, config) {
   this.log = log;
   global.log = log;
 
-  this.manufacturer = config["manufacturer"] || "AdGuard";
-  this.name = config["name"] || "AdGuardHome";
+  this.manufacturer = "AdGuard";
+  this.name = "AdGuardHome";
 
   this.username = config["username"];
   this.password = config["password"];

@@ -1,0 +1,33 @@
+{
+  "pluginAlias": "AdGuardHome",
+  "pluginType": "accessory",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "host": {
+        "title": "IP Address / Hostname",
+        "type": "string",
+        "required": true,
+        "format": "hostname",
+        "default": "localhost"
+      },
+      "port": {
+        "title": "Port",
+        "type": "integer",
+        "required": false,
+        "default": 80
+      },
+      "username": {
+        "title": "Username",
+        "type": "string",
+        "required": false
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "required": false
+      }
+    }
+  }
+}
