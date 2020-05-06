@@ -68,6 +68,7 @@ class AdGuardHome implements AccessoryPlugin {
         CharacteristicEventTypes.GET,
         (callback: CharacteristicGetCallback) => {
           this.gotInstance("status")
+            .json()
             .then((body: any) => {
               const enabled = body.protection_enabled === true;
               this.log.info(
