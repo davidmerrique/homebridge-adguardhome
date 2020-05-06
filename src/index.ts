@@ -55,6 +55,7 @@ class AdGuardHome implements AccessoryPlugin {
 
     this.gotInstance = got.extend({
       prefixUrl: "http://" + this.host + ":" + this.port + "/control",
+      responseType: "json",
       headers: {
         Authorization,
       },
@@ -67,12 +68,12 @@ class AdGuardHome implements AccessoryPlugin {
         CharacteristicEventTypes.GET,
         (callback: CharacteristicGetCallback) => {
           this.gotInstance("status")
-            .json()
             .then((body: any) => {
               const enabled = body.protection_enabled === true;
               this.log.info(
-                "Current state of the switch was returned: " +
-                  (enabled ? "ON" : "OFF")
+                `Current state of the switch was returned: ${
+                  enabled ? "ON" : "OFF"
+                }`
               );
               callback(undefined, enabled);
             })
@@ -94,7 +95,7 @@ class AdGuardHome implements AccessoryPlugin {
             .then((res) => {
               const enabled = res.statusCode === 200;
               this.log.info(
-                "Switch state was set to: " + (enabled ? "ON" : "OFF")
+                `Switch state was set to: ${enabled ? "ON" : "OFF"}`
               );
               callback(null, enabled);
             })
@@ -110,7 +111,7 @@ class AdGuardHome implements AccessoryPlugin {
       .setCharacteristic(hap.Characteristic.Model, this.model)
       .setCharacteristic(hap.Characteristic.SerialNumber, this.serial);
 
-    log.info("Switch finished initializing!");
+    this.log.info("Switch finished initializing!");
   }
 
   getServices(): Service[] {
