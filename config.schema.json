@@ -1,7 +1,6 @@
 {
   "pluginAlias": "AdGuardHome",
   "pluginType": "accessory",
-  "singular": true,
   "schema": {
     "type": "object",
     "properties": {
@@ -10,29 +9,34 @@
         "type": "string",
         "required": true,
         "format": "hostname",
-        "default": "localhost"
+        "default": "localhost",
+        "description": "AdGuard Home hostname, the default is localhost."
       },
       "port": {
         "title": "Port",
         "type": "integer",
         "required": false,
-        "default": 80
+        "default": 80,
+        "description": "AdGuard Home port, the default is 80."
       },
       "username": {
         "title": "Username",
         "type": "string",
-        "required": false
+        "required": false,
+        "description": "AdGuard Home username."
       },
       "password": {
         "title": "Password",
         "type": "string",
-        "required": false
+        "required": false,
+        "description": "AdGuard Home password."
       },
       "name": {
         "title": "HomeKit Name",
         "type": "string",
         "required": false,
-        "default": "AdGuard Home"
+        "default": "AdGuard Home",
+        "description": "A unique name for this accessory."
       }
     }
   }

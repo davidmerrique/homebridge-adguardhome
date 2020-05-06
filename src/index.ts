@@ -17,25 +17,32 @@ let hap: HAP;
 
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory("ExampleSwitch", AdGuardHome);
+  api.registerAccessory("homebridge-adguardhome", "AdGuardHome", AdGuardHome);
 };
 
 class AdGuardHome implements AccessoryPlugin {
   private readonly log: Logging;
   private readonly name: string;
-  private readonly username: string;
-  private readonly password: string;
-  private readonly host: string;
-  private readonly port: string;
-  private readonly gotInstance: Got;
-  private switchOn = false;
+  private readonly manufacturer: string;
+  private readonly model: string;
+  private readonly serial: string;
 
+  private username: string;
+  private password: string;
+  private host: string;
+  private port: string;
+
+  private readonly gotInstance: Got;
   private readonly switchService: Service;
   private readonly informationService: Service;
 
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
+
+    this.manufacturer = config["manufacturer"] || "Raspberry Pi";
+    this.model = config["model"] || "AdGuard Home";
+    this.serial = config["serial-number"] || "123-456-789";
 
     this.username = config["username"];
     this.password = config["password"];
@@ -61,19 +68,18 @@ class AdGuardHome implements AccessoryPlugin {
         (callback: CharacteristicGetCallback) => {
           this.gotInstance("status")
             .json()
-            .then((body) => {
-              log.info(
+            .then((body: any) => {
+              const enabled = body.protection_enabled === true;
+              this.log.info(
                 "Current state of the switch was returned: " +
-                  (this.switchOn ? "ON" : "OFF")
+                  (enabled ? "ON" : "OFF")
               );
-              console.log(body);
-
-              // callback(undefined, body.protection_enabled === true);
+              callback(undefined, enabled);
             })
             .catch((error) => {
+              this.log.error(error.response.body);
               callback(error);
             });
-          // callback(undefined, this.switchOn);
         }
       )
       .on(
@@ -86,22 +92,23 @@ class AdGuardHome implements AccessoryPlugin {
               },
             })
             .then((res) => {
-              callback(null, res.statusCode === 200);
+              const enabled = res.statusCode === 200;
+              this.log.info(
+                "Switch state was set to: " + (enabled ? "ON" : "OFF")
+              );
+              callback(null, enabled);
             })
             .catch((error) => {
+              this.log.error(error.response.body);
               callback(error);
             });
-          // this.switchOn = value as boolean;
-          log.info(
-            "Switch state was set to: " + (this.switchOn ? "ON" : "OFF")
-          );
-          // callback();
         }
       );
 
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, "AdGuard")
-      .setCharacteristic(hap.Characteristic.Model, "AdGuard Home");
+      .setCharacteristic(hap.Characteristic.Manufacturer, this.manufacturer)
+      .setCharacteristic(hap.Characteristic.Model, this.model)
+      .setCharacteristic(hap.Characteristic.SerialNumber, this.serial);
 
     log.info("Switch finished initializing!");
   }
