@@ -69,7 +69,8 @@ class AdGuardHome implements AccessoryPlugin {
         (callback: CharacteristicGetCallback) => {
           this.gotInstance("status")
             .json()
-            .then((body: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .then((body: any) => {
               const enabled = body.protection_enabled === true;
               this.log.info(
                 `Current state of the switch was returned: ${
