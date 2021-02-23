@@ -63,6 +63,9 @@ class AdGuardHome implements AccessoryPlugin {
       headers: {
         Authorization,
       },
+      https: {
+        rejectUnauthorized: false,
+      },
     });
 
     this.switchService = new hap.Service.Switch(this.name);
@@ -85,6 +88,7 @@ class AdGuardHome implements AccessoryPlugin {
             })
             .catch((error) => {
               if (error.response) this.log.error(error.response.body);
+              else this.log.error(error);
               callback(error);
             });
         }
@@ -107,6 +111,7 @@ class AdGuardHome implements AccessoryPlugin {
             })
             .catch((error) => {
               if (error.response) this.log.error(error.response.body);
+              else this.log.error(error);
               callback(error);
             });
         }
