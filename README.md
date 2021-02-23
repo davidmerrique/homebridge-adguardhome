@@ -23,7 +23,8 @@ This enables an On/Off switch Accessory to enable/disable AdGuard Home protectio
       "name": "AdGuard",
       "username": "ADGUARD_USERNAME",
       "password": "ADGUARD_PASSWORD",
-      "host": "192.168.1.2"
+      "host": "192.168.1.2",
+      "https": false
     }
   ]
 }
