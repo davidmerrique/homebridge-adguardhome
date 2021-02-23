@@ -31,6 +31,7 @@ class AdGuardHome implements AccessoryPlugin {
   private password: string;
   private host: string;
   private port: string;
+  private https: boolean;
 
   private readonly gotInstance: Got;
   private readonly switchService: Service;
@@ -48,13 +49,16 @@ class AdGuardHome implements AccessoryPlugin {
     this.password = config["password"];
     this.host = config["host"] || "localhost";
     this.port = config["port"] || 80;
+    this.https = !!config["https"];
 
     const Authorization = `Basic ${Buffer.from(
       `${this.username}:${this.password}`
     ).toString("base64")}`;
 
     this.gotInstance = got.extend({
-      prefixUrl: `http://${this.host}:${this.port}/control`,
+      prefixUrl: `http${this.https ? "s" : ""}://${this.host}:${
+        this.port
+      }/control`,
       responseType: "json",
       headers: {
         Authorization,

@@ -12,6 +12,11 @@
         "default": "localhost",
         "description": "AdGuard Home hostname, the default is localhost."
       },
+      "https": {
+        "title": "Use HTTPS?",
+        "type": "boolean",
+        "default": false
+      },
       "port": {
         "title": "Port",
         "type": "integer",
