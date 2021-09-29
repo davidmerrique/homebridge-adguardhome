@@ -79,11 +79,13 @@ class AdGuardHome implements AccessoryPlugin {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .then((body: any) => {
               const enabled = body.protection_enabled === true;
-              this.log.info(
-                `Current state of the switch was returned: ${
-                  enabled ? "ON" : "OFF"
-                }`
-              );
+              if (config["stateLogging"]) {
+                this.log.info(
+                  `Current state of the switch was returned: ${
+                    enabled ? "ON" : "OFF"
+                  }`
+                );
+              }
               callback(undefined, enabled);
             })
             .catch((error) => {
