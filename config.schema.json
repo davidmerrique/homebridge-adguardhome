@@ -42,6 +42,11 @@
         "required": false,
         "default": "AdGuard Home",
         "description": "A unique name for this accessory."
+      },
+      "stateLogging": {
+        "title": "Log State?",
+        "type": "boolean",
+        "default": true
       }
     }
   }
