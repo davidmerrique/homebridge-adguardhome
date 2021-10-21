@@ -1,7 +1,7 @@
 {
   "name": "homebridge-adguardhome",
   "displayName": "AdGuard Home Switch",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "AdGuard Home plugin for Homebridge",
   "main": "dist/index.js",
   "license": "MIT",
