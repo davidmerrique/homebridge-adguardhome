@@ -32,6 +32,7 @@ class AdGuardHome implements AccessoryPlugin {
   private host: string;
   private port: string;
   private https: boolean;
+  private interval: number;
   private debug: boolean;
   // Cache for accessory status
   private currentState: CharacteristicValue;
@@ -54,6 +55,7 @@ class AdGuardHome implements AccessoryPlugin {
     this.host = config["host"] || "localhost";
     this.port = config["port"] || 80;
     this.https = !!config["https"];
+    this.interval = config["interval"] || 5000;
     this.debug = config["debug"] || false;
     this.currentState = hap.Characteristic.LockCurrentState.UNSECURED;
     this.targetState = hap.Characteristic.LockTargetState.UNSECURED;
@@ -196,7 +198,7 @@ class AdGuardHome implements AccessoryPlugin {
               .updateValue(this.currentState);
           }
         });
-    }, 1000);
+    }, this.interval);
 
     this.log.info("Finished initializing!");
   }
