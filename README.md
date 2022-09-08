@@ -1,3 +1,6 @@
+# Looking for a maintainer :warning:
+I no longer use Homebridge, if you'd like to take ownership of this repository, open an issue.
+
 # Homebridge AdGuard Home
 
 This enables an On/Off switch Accessory to enable/disable AdGuard Home protection.
