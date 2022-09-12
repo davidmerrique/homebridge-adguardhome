@@ -65,9 +65,8 @@ class AdGuardHome implements AccessoryPlugin {
     ).toString("base64")}`;
 
     this.gotInstance = got.extend({
-      prefixUrl: `http${this.https ? "s" : ""}://${this.host}:${
-        this.port
-      }/control`,
+      // eslint-disable-next-line prettier/prettier
+      prefixUrl: `http${this.https ? "s" : ""}://${this.host}:${this.port}/control`,
       responseType: "json",
       headers: {
         Authorization,
@@ -90,7 +89,9 @@ class AdGuardHome implements AccessoryPlugin {
             .then((body: any) => {
               const enabled = body.protection_enabled === true;
               if (config["stateLogging"])
-                this.log.info(`Current state: ${enabled ? "ON" : "OFF"}`);
+                this.log.info(
+                  `Current state: ${enabled ? "🟡 ON" : "⚪️ OFF"}`
+                );
               this.currentState = enabled
                 ? hap.Characteristic.LockCurrentState.SECURED
                 : hap.Characteristic.LockCurrentState.UNSECURED;
@@ -134,7 +135,7 @@ class AdGuardHome implements AccessoryPlugin {
             })
             .then((res) => {
               const enabled = res.statusCode === 200;
-              this.log.info(`Set to: ${enabled ? "ON" : "OFF"}`);
+              this.log.info(`Set to: ${enabled ? "🟡 ON" : "⚪️ OFF"}`);
               this.targetState = enabled
                 ? hap.Characteristic.LockTargetState.SECURED
                 : hap.Characteristic.LockTargetState.UNSECURED;
