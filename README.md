@@ -1,9 +1,8 @@
 # Homebridge AdGuard Home
 
-This enables an On/Off switch Accessory to enable/disable AdGuard Home protection.
 Display AdGuard Home as a lock accesory.
 
-NOTE: When updating from 1.5.1 to 1.6.0 you might need to re-add the accory again.
+NOTE: When updating from 1.5.1 to 1.6.0 you might need to re-add the accessory again.
 
 ## Requirements
 
