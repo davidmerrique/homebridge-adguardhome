@@ -26,7 +26,8 @@ NOTE: When updating from 1.5.1 to 1.6.0 you might need to re-add the accessory a
       "username": "ADGUARD_USERNAME",
       "password": "ADGUARD_PASSWORD",
       "host": "192.168.1.2",
-      "https": false
+      "https": false,
+      "Type": "LOCK" // default: "SWITCH"
     }
   ]
 }

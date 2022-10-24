@@ -43,6 +43,20 @@
         "default": "AdGuard Home",
         "description": "A unique name for this accessory."
       },
+      "type": {
+        "type": "string",
+        "title": "HomeKit Accesory Type",
+        "oneOf": [
+          {
+            "title": "Switch",
+            "enum": ["SWITCH"]
+          },
+          {
+            "title": "Lock",
+            "enum": ["LOCK"]
+          }
+        ]
+      },
       "stateLogging": {
         "title": "Log State?",
         "type": "boolean",
