@@ -59,8 +59,6 @@ class AdGuardHome implements AccessoryPlugin {
     this.interval = config["interval"] || 5000;
     this.type = config["type"] || "SWITCH";
     this.debug = config["debug"] || false;
-    this.currentState = hap.Characteristic.LockCurrentState.UNSECURED;
-    this.targetState = hap.Characteristic.LockTargetState.UNSECURED;
 
     const Authorization = `Basic ${Buffer.from(
       `${this.username}:${this.password}`
@@ -78,8 +76,10 @@ class AdGuardHome implements AccessoryPlugin {
       },
     });
 
-    console.log(this.type);
     if (this.type == "LOCK") {
+      this.currentState = hap.Characteristic.LockCurrentState.UNSECURED;
+      this.targetState = hap.Characteristic.LockTargetState.UNSECURED;
+
       this.accessoryService = new hap.Service.LockMechanism(this.name);
       this.accessoryService
         .getCharacteristic(hap.Characteristic.LockCurrentState)
@@ -99,19 +99,7 @@ class AdGuardHome implements AccessoryPlugin {
                   ? hap.Characteristic.LockCurrentState.SECURED
                   : hap.Characteristic.LockCurrentState.UNSECURED;
               })
-              .catch((error) => {
-                if (
-                  this.currentState !=
-                  hap.Characteristic.LockCurrentState.JAMMED
-                ) {
-                  if (this.debug) {
-                    if (error.response) this.log.error(error.response.body);
-                    else this.log.error(error);
-                  } else this.log.info("Accessory is offline");
-                  this.currentState =
-                    hap.Characteristic.LockCurrentState.JAMMED;
-                }
-              })
+              .catch((error) => this.acessoryIsOffline(error))
               .then(() => {
                 this.accessoryService
                   .getCharacteristic(hap.Characteristic.LockCurrentState)
@@ -145,19 +133,7 @@ class AdGuardHome implements AccessoryPlugin {
                   ? hap.Characteristic.LockTargetState.SECURED
                   : hap.Characteristic.LockTargetState.UNSECURED;
               })
-              .catch((error) => {
-                if (
-                  this.currentState !=
-                  hap.Characteristic.LockCurrentState.JAMMED
-                ) {
-                  if (this.debug) {
-                    if (error.response) this.log.error(error.response.body);
-                    else this.log.error(error);
-                  } else this.log.info("Accessory is offline");
-                  this.currentState =
-                    hap.Characteristic.LockCurrentState.JAMMED;
-                }
-              });
+              .catch((error) => this.acessoryIsOffline(error));
             callback(null);
           }
         );
@@ -172,25 +148,14 @@ class AdGuardHome implements AccessoryPlugin {
             this.targetState = enabled
               ? hap.Characteristic.LockTargetState.SECURED
               : hap.Characteristic.LockTargetState.UNSECURED;
-            if (
-              this.currentState == hap.Characteristic.LockCurrentState.JAMMED
-            ) {
+            if (this.isJammed()) {
               this.currentState = hap.Characteristic.LockCurrentState.UNKNOWN;
               this.log.info("Accessory is online");
             }
           })
-          .catch(() => {
-            if (
-              this.currentState != hap.Characteristic.LockCurrentState.JAMMED
-            ) {
-              this.log.info("Accessory is offline");
-              this.currentState = hap.Characteristic.LockCurrentState.JAMMED;
-            }
-          })
+          .catch((error) => this.acessoryIsOffline(error))
           .then(() => {
-            if (
-              this.currentState == hap.Characteristic.LockCurrentState.JAMMED
-            ) {
+            if (this.isJammed()) {
               this.accessoryService
                 .getCharacteristic(hap.Characteristic.LockCurrentState)
                 .updateValue(this.currentState);
@@ -210,6 +175,9 @@ class AdGuardHome implements AccessoryPlugin {
           });
       }, this.interval);
     } else {
+      this.currentState = false;
+      this.targetState = false;
+
       this.accessoryService = new hap.Service.Switch(this.name);
       this.accessoryService
         .getCharacteristic(hap.Characteristic.On)
@@ -231,16 +199,9 @@ class AdGuardHome implements AccessoryPlugin {
               .then((res) => {
                 const enabled = res.statusCode === 200;
                 this.log.info(`Set to: ${enabled ? "🟡 ON" : "⚪️ OFF"}`);
+                this.targetState = enabled ? true : false;
               })
-              .catch((error) => {
-                if (this.currentState != "JAMMED") {
-                  if (this.debug) {
-                    if (error.response) this.log.error(error.response.body);
-                    else this.log.error(error);
-                  } else this.log.info("Accessory is offline");
-                  this.currentState = "JAMMED";
-                }
-              });
+              .catch((error) => this.acessoryIsOffline(error));
             callback(null);
           }
         );
@@ -253,21 +214,16 @@ class AdGuardHome implements AccessoryPlugin {
           .then((body: any) => {
             const enabled = body.protection_enabled === true;
             this.targetState = enabled ? true : false;
-            if (this.currentState == "JAMMED") {
+            if (this.isJammed()) {
               this.currentState = false;
               this.log.info("Accessory is online");
             }
           })
-          .catch(() => {
-            if (this.currentState != "JAMMED") {
-              this.log.info("Accessory is offline");
-              this.currentState = "JAMMED";
-            }
-          })
+          .catch((error) => this.acessoryIsOffline(error))
           .then(() => {
-            if (this.currentState == "JAMMED") {
+            if (this.isJammed()) {
               this.accessoryService
-                .getCharacteristic(hap.Characteristic.LockCurrentState)
+                .getCharacteristic(hap.Characteristic.On)
                 .updateValue(this.currentState);
             } else if (this.currentState != this.targetState) {
               this.log(`Setting to ${this.targetState}`);
@@ -290,5 +246,25 @@ class AdGuardHome implements AccessoryPlugin {
 
   getServices(): Service[] {
     return [this.informationService, this.accessoryService];
+  }
+
+  private isJammed(): boolean {
+    if (this.type == "LOCK")
+      return this.currentState == hap.Characteristic.LockCurrentState.JAMMED;
+    else return this.currentState == "JAMMED";
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private acessoryIsOffline(error: any) {
+    if (!this.isJammed()) {
+      if (this.debug) {
+        if (error.response) this.log.error(error.response.body);
+        else this.log.error(error);
+      } else this.log.info("🤷 Accessory is offline or unreachable");
+
+      if (this.type == "LOCK")
+        this.currentState = hap.Characteristic.LockCurrentState.JAMMED;
+      else this.currentState = "JAMMED";
+    }
   }
 }

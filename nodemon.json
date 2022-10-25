@@ -1,6 +1,6 @@
 {
 	"watch": [
-		"src/index.ts"
+		"dist/index.js"
 	],
 	"ext": "ts",
 	"ignore": [],
