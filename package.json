@@ -30,7 +30,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "got": "^11.8.2"
+    "got": "^12.5.3"
   },
   "devDependencies": {
     "@types/node": "^16.11.1",
