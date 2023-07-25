@@ -46,6 +46,7 @@
       "type": {
         "type": "string",
         "title": "HomeKit Accesory Type",
+        "description": "Display accessory as regular switch or security lock. For security lock, it have extra jammed state when plugins can't connect to AdGuard Home server.",
         "oneOf": [
           {
             "title": "Switch",
@@ -56,6 +57,19 @@
             "enum": ["LOCK"]
           }
         ]
+      },
+      "autoOnTimerName": {
+        "title": "Auto-On Timer Name",
+        "type": "string",
+        "required": false,
+        "description": "Name your auto-on timer so it can be easilly called with Siri."
+      },
+      "autoOnTimer": {
+        "title": "Auto-On Timer",
+        "type": "integer",
+        "required": false,
+        "default": 0,
+        "description": "How long in x minute(s) the AdGuard Home need to be turned on after it turned off. Set to 0 to disable and hide timer."
       },
       "stateLogging": {
         "title": "Log State?",
