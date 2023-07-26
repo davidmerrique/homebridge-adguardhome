@@ -53,11 +53,11 @@ Display AdGuard Home as a lock or switch accesory.
 - "name": [**Mandatory**] The name that will appear in Home app.
 - "username": [*Optional*] The AdGuard Home login username.
 - "password": [*Optional*] The AdGuard Home login password.
-- "host": [**Mandatory**] Hostname or IP of the AdGuard Home server, default is localhost.
+- "host": [*Optional*] Hostname or IP of the AdGuard Home server, default is localhost.
 - "port": [*Optional*] The AdGuard Home server port, default is 80.
 - "https": [*Optional*] To use HTTPS or regular HTTP, default is HTTP.
 - "Type": [*Optional*] Choose between SWITCH or LOCK, default is SWITCH.
-- "autoOnTimer": [**Optional**] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App.
-- "stateLogging": [**Optional**] Display more log output.
+- "autoOnTimer": [*Optional*] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App.
+- "stateLogging": [*Optional*] Display more log output.
 
 Or just use [Homebridge Config UI X](https://github.com/homebridge/homebridge-config-ui-x) 👀
