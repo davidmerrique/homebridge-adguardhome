@@ -58,18 +58,16 @@
           }
         ]
       },
-      "autoOnTimerName": {
-        "title": "Auto-On Timer Name",
-        "type": "string",
-        "required": false,
-        "description": "Name your auto-on timer so it can be easilly called with Siri."
-      },
       "autoOnTimer": {
-        "title": "Auto-On Timer",
-        "type": "integer",
-        "required": false,
-        "default": 0,
-        "description": "How long in x minute(s) the AdGuard Home need to be turned on after it turned off. Set to 0 to disable and hide timer."
+        "title": "Timers",
+        "type": "array",
+        "description": "How long in x minute(s) the AdGuard Home need to be turned on after it turned off. Set to 0 to disable and hide timer.",
+        "items": {
+          "title": "Timer",
+          "type": "integer",
+          "required": false,
+          "default": 0
+        }
       },
       "stateLogging": {
         "title": "Log State?",

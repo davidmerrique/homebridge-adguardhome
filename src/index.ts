@@ -36,9 +36,8 @@ class AdGuardHome implements AccessoryPlugin {
   private stateLogging: boolean;
   private type: string;
   private debug: boolean;
-  private autoOnTimerName: string;
-  private autoOnTimer: number;
-  private autoOnHandler: NodeJS.Timeout;
+  private autoOnTimer: number[];
+  private autoOnHandler?: NodeJS.Timeout;
   // Cache for accessory status
   private currentState: CharacteristicValue;
   private targetState: CharacteristicValue;
@@ -47,10 +46,11 @@ class AdGuardHome implements AccessoryPlugin {
   private offState: CharacteristicValue;
   private unknownState: CharacteristicValue;
   private jammedState: CharacteristicValue;
+  // Services
+  private accessoryServices: Service[];
+  private onAPICall: boolean;
 
   private readonly gotInstance: Got;
-  private readonly accessoryService: Service;
-  private readonly accessoryServiceTimer: Service;
   private readonly informationService: Service;
 
   constructor(log: Logging, config: AccessoryConfig) {
@@ -70,25 +70,31 @@ class AdGuardHome implements AccessoryPlugin {
     this.stateLogging = config["stateLogging"] || false;
     this.type = config["type"] || "SWITCH";
     this.debug = config["debug"] || false;
-    this.autoOnTimer = config["autoOnTimer"] || 0;
-    this.autoOnTimerName =
-      config["autoOnTimerName"] || "${this.name} ${this.autoOnTimer}s Timer";
-    this.autoOnHandler = setTimeout(() => {
-      // do nothing
-    }, 0);
+    this.autoOnTimer = config["autoOnTimer"] || [];
 
     // Setup default states values
-    this.onState = true;
-    this.offState = false;
-    this.unknownState = this.offState;
-    this.jammedState = this.offState;
+    this.onState = this.isLock()
+      ? hap.Characteristic.LockCurrentState.SECURED
+      : true;
+    this.offState = this.isLock()
+      ? hap.Characteristic.LockCurrentState.UNSECURED
+      : false;
+    this.unknownState = this.isLock()
+      ? hap.Characteristic.LockCurrentState.UNKNOWN
+      : this.offState;
+    this.jammedState = this.isLock()
+      ? hap.Characteristic.LockCurrentState.JAMMED
+      : this.offState;
     this.currentState = this.offState;
     this.targetState = this.offState;
 
+    // Authorization to API
     const Authorization = `Basic ${Buffer.from(
       `${this.username}:${this.password}`
     ).toString("base64")}`;
+    this.onAPICall = false;
 
+    // Get the API handle
     this.gotInstance = got.extend({
       // eslint-disable-next-line prettier/prettier
       prefixUrl: `http${this.https ? "s" : ""}://${this.host}:${this.port}/control`,
@@ -101,117 +107,41 @@ class AdGuardHome implements AccessoryPlugin {
       },
     });
 
-    // Main accessory
+    // Create main accessory services
     if (this.isLock()) {
-      // Accesory is a lock
-      this.onState = hap.Characteristic.LockCurrentState.SECURED;
-      this.offState = hap.Characteristic.LockCurrentState.UNSECURED;
-      this.unknownState = hap.Characteristic.LockCurrentState.UNKNOWN;
-      this.jammedState = hap.Characteristic.LockCurrentState.JAMMED;
-
-      this.currentState = this.offState;
-      this.targetState = this.offState;
-
-      this.accessoryService = new hap.Service.LockMechanism(this.name);
-      this.accessoryService
-        .getCharacteristic(hap.Characteristic.LockCurrentState)
-        .on(
-          CharacteristicEventTypes.GET,
-          (callback: CharacteristicGetCallback) => {
-            this.gotInstance("status")
-              .json()
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              .then((body: any) => {
-                const enabled = body.protection_enabled === true;
-                if (this.stateLogging)
-                  this.log.info(
-                    `Current state: ${enabled ? "🔒 Enable" : "🔓 Disable"}`
-                  );
-                this.currentState = enabled ? this.onState : this.offState;
-              })
-              .catch((error) => this.accessoryIsOffline(error))
-              .then(() => {
-                this.accessoryService
-                  .getCharacteristic(hap.Characteristic.LockCurrentState)
-                  .updateValue(this.currentState);
-              });
-            callback(null, this.currentState);
-          }
-        );
-
-      this.accessoryService
-        .getCharacteristic(hap.Characteristic.LockTargetState)
-        .on(
-          CharacteristicEventTypes.GET,
-          (callback: CharacteristicGetCallback) => {
-            callback(null, this.targetState);
-          }
-        )
-        .on(
-          CharacteristicEventTypes.SET,
-          (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-            this.setAdGuardHome(value);
-            callback(null);
-          }
-        );
+      this.accessoryServices = [
+        new hap.Service.LockMechanism(this.name, "main_lock"),
+      ];
     } else {
-      // Accesory is a switch
-      this.accessoryService = new hap.Service.Switch(this.name);
-      this.accessoryService
-        .getCharacteristic(hap.Characteristic.On)
-        .on(
-          CharacteristicEventTypes.GET,
-          (callback: CharacteristicGetCallback) => {
-            callback(null, this.targetState);
-          }
-        )
-        .on(
-          CharacteristicEventTypes.SET,
-          (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-            this.setAdGuardHome(value);
-            callback(null);
-          }
-        );
+      this.accessoryServices = [
+        new hap.Service.Switch(this.name, "main_switch"),
+      ];
     }
 
-    // Timer accesory
-    this.accessoryServiceTimer = new hap.Service.Switch(this.autoOnTimerName);
-    this.accessoryServiceTimer
-      .getCharacteristic(hap.Characteristic.On)
-      .on(
-        CharacteristicEventTypes.GET,
-        (callback: CharacteristicGetCallback) => {
-          callback(null, this.targetState);
-        }
-      )
-      .on(
-        CharacteristicEventTypes.SET,
-        (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-          this.setAdGuardHome(value);
-          clearTimeout(this.autoOnHandler);
+    // Create timer accessories
+    this.autoOnTimer.forEach((timer, index) => {
+      if (timer > 0) {
+        const name = this.timerName(index);
+        const subtype =
+          "timer_" +
+          (this.isLock() ? "lock_" : "switch_") +
+          index +
+          ":" +
+          timer;
+        const service = this.isLock()
+          ? new hap.Service.LockMechanism(name, subtype)
+          : new hap.Service.Switch(name, subtype);
+        this.accessoryServices.push(service);
+      }
+    });
 
-          if (value === false) {
-            this.log.info(
-              `⏲️ - Will turn on AdGuard Home in ${this.autoOnTimer} minute(s)`
-            );
+    // Assign default events to all accesories
+    this.accessoryServices.forEach((accessoryService) => {
+      this.assignDefaultEvents(accessoryService);
+    });
 
-            // Do the timer
-            this.autoOnHandler = setTimeout(() => {
-              this.setAdGuardHome(this.onState);
-              this.updateState();
-            }, this.autoOnTimer * 1000 * 60);
-          } else {
-            this.log.info(`⏲️ - Clearing timer`);
-          }
-
-          callback(null);
-        }
-      );
-
-    // The loop
-    setInterval(() => {
-      this.updateState();
-    }, this.interval);
+    // Main loop
+    this.loopStates();
 
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, this.manufacturer)
@@ -222,77 +152,71 @@ class AdGuardHome implements AccessoryPlugin {
   }
 
   getServices(): Service[] {
-    if (this.autoOnTimer > 0) {
-      return [
-        this.informationService,
-        this.accessoryService,
-        this.accessoryServiceTimer,
-      ];
-    } else {
-      return [this.informationService, this.accessoryService];
-    }
+    return this.accessoryServices.concat(this.informationService);
   }
 
-  private updateState() {
-    this.gotInstance("status")
-      .json()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((body: any) => {
-        const enabled = body.protection_enabled === true;
-        this.targetState = enabled ? this.onState : this.offState;
-        if (this.isJammed()) {
-          this.currentState = this.isLock()
-            ? this.unknownState
-            : this.jammedState;
-          if (this.stateLogging) this.log.info("Accessory is jammed");
-        }
-      })
-      .catch((error) => this.accessoryIsOffline(error))
-      .then(() => {
-        if (this.isJammed()) {
-          this.accessoryService
-            .getCharacteristic(
-              this.isLock()
-                ? hap.Characteristic.LockCurrentState
-                : hap.Characteristic.On
-            )
-            .updateValue(this.currentState);
-
-          if (this.autoOnTimer > 0) {
-            this.accessoryServiceTimer
-              .getCharacteristic(hap.Characteristic.On)
-              .updateValue(false);
+  private loopStates() {
+    setInterval(() => {
+      this.gotInstance("status")
+        .json()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((body: any) => {
+          const enabled = body.protection_enabled === true;
+          this.targetState = enabled ? this.onState : this.offState;
+          if (this.isJammed()) {
+            this.currentState = this.isLock()
+              ? this.unknownState
+              : this.jammedState;
+            if (this.stateLogging) this.log.info("😢 - Accessory is jammed");
           }
-        } else if (this.currentState != this.targetState) {
-          this.log(`Updating to: ${this.targetState ? "🟡 ON" : "⚪️ OFF"}`);
-          this.currentState =
-            this.targetState === this.onState ? this.onState : this.offState;
-          if (this.isLock()) {
-            this.accessoryService
-              .getCharacteristic(hap.Characteristic.LockCurrentState)
-              .updateValue(this.currentState);
-            this.accessoryService
-              .getCharacteristic(hap.Characteristic.LockTargetState)
-              .updateValue(this.targetState);
-          } else {
-            this.accessoryService
-              .getCharacteristic(hap.Characteristic.On)
-              .updateValue(this.currentState);
-          }
+        })
+        .catch((error) => this.accessoryIsOffline(error))
+        .then(() => {
+          this.updateStates();
+        });
+    }, this.interval);
+  }
 
-          if (this.autoOnTimer > 0) {
-            this.accessoryServiceTimer
-              .getCharacteristic(hap.Characteristic.On)
-              .updateValue(this.currentState === this.onState ? true : false);
-          }
-        }
-      });
-
-    if (this.stateLogging)
-      this.log.info(
+  private updateStates() {
+    this.accessoryServices.forEach((accessory) => {
+      if (this.isJammed()) {
+        accessory
+          .getCharacteristic(
+            this.isLock()
+              ? hap.Characteristic.LockCurrentState
+              : hap.Characteristic.On
+          )
+          .updateValue(this.currentState);
+      } else if (this.currentState !== this.targetState) {
         // eslint-disable-next-line prettier/prettier
-        `Current state: ${this.currentState ? "🔒 Enable" : "🔓 Disable"}`
-      );
+        this.currentState =
+          this.targetState === this.onState ? this.onState : this.offState;
+
+        if (this.isLock()) {
+          accessory
+            .getCharacteristic(hap.Characteristic.LockCurrentState)
+            .updateValue(this.currentState);
+          accessory
+            .getCharacteristic(hap.Characteristic.LockTargetState)
+            .updateValue(this.targetState);
+        } else {
+          accessory
+            .getCharacteristic(hap.Characteristic.On)
+            .updateValue(this.currentState);
+        }
+
+        // eslint-disable-next-line prettier/prettier
+        this.log(`Current status: ${this.currentState ? "🟢 Locked" : "🔴 Unlocked"}`);
+      }
+      if (this.stateLogging)
+        // eslint-disable-next-line prettier/prettier
+        this.log.info("Updating", accessory.displayName, ":", this.currentState ? "🟢 Locked" : "🔴 Unlocked");
+    });
+  }
+
+  private timerName(index: number) {
+    // eslint-disable-next-line prettier/prettier
+    return `${this.name} ${this.autoOnTimer[index]} ${this.autoOnTimer[index] > 1 ? "Minutes" : "Minute"} Timer`;
   }
 
   private isLock(): boolean {
@@ -303,6 +227,86 @@ class AdGuardHome implements AccessoryPlugin {
     if (this.type == "LOCK")
       return this.currentState == hap.Characteristic.LockCurrentState.JAMMED;
     else return this.currentState == "JAMMED";
+  }
+
+  private assignDefaultEvents(service: Service) {
+    service
+      .getCharacteristic(
+        this.isLock()
+          ? hap.Characteristic.LockTargetState
+          : hap.Characteristic.On
+      )
+      .on(
+        CharacteristicEventTypes.GET,
+        (callback: CharacteristicGetCallback) => {
+          callback(null, this.targetState);
+        }
+      )
+      .on(
+        CharacteristicEventTypes.SET,
+        (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
+          this.setAdGuardHome(value);
+
+          if (this.autoOnHandler != undefined) {
+            this.log.info(`⏲️ - Clearing previous timer`);
+            clearTimeout(this.autoOnHandler);
+          }
+
+          if (service.subtype?.includes("timer")) {
+            const timer = Number(service.subtype.split(":")[1]);
+
+            if (value === this.offState) {
+              // eslint-disable-next-line prettier/prettier
+              this.log.info(`⏲️ - AdGuard Home will be locked in ${timer} minute${timer > 1 ? "s" : ""}`);
+
+              // Do the timer
+              this.autoOnHandler = setTimeout(() => {
+                // eslint-disable-next-line prettier/prettier
+                this.log.info(`⏲️ - The ${timer} minute${timer > 1 ? "s" : ""} timer finish`);
+                this.setAdGuardHome(this.onState);
+                this.autoOnHandler = undefined;
+              }, timer * 1000 * 60);
+            }
+          }
+
+          callback(null);
+        }
+      );
+
+    if (this.isLock()) {
+      service
+        .getCharacteristic(hap.Characteristic.LockCurrentState)
+        .on(
+          CharacteristicEventTypes.GET,
+          (callback: CharacteristicGetCallback) => {
+            // Call API one in a time
+            if (!this.onAPICall) {
+              this.onAPICall = true;
+              this.gotInstance("status")
+                .json()
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .then((body: any) => {
+                  const enabled = body.protection_enabled === true;
+                  if (this.stateLogging)
+                    // eslint-disable-next-line prettier/prettier
+                    this.log.info(`Current server state: ${enabled ? "🟢 Locked" : "🔴 Unlocked"}`);
+                  this.currentState = enabled ? this.onState : this.offState;
+                })
+                .catch((error) => this.accessoryIsOffline(error))
+                .then(() => {
+                  this.onAPICall = false;
+                  this.accessoryServices.forEach((service) => {
+                    service
+                      .getCharacteristic(hap.Characteristic.LockCurrentState)
+                      .updateValue(this.currentState);
+                  });
+                });
+            }
+
+            callback(null, this.currentState);
+          }
+        );
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -328,8 +332,14 @@ class AdGuardHome implements AccessoryPlugin {
       })
       .then((res) => {
         const enabled = res.statusCode === 200;
-        this.log.info(`Set to: ${enabled ? "🔒 Enable" : "🔓 Disable"}`);
-        this.targetState = enabled ? this.onState : this.offState;
+        if (this.stateLogging && enabled) this.log.info("Command success");
+
+        this.targetState =
+          status === this.onState ? this.onState : this.offState;
+        // eslint-disable-next-line prettier/prettier
+        this.log.info(`Seting to: ${status === this.onState ? "🟢 Locked" : "🔴 Unlocked"}`);
+
+        this.updateStates();
       })
       .catch((error) => this.accessoryIsOffline(error));
   }
