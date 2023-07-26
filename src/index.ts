@@ -69,6 +69,7 @@ class AdGuardHome implements AccessoryPlugin {
     this.interval = config["interval"] || 5000;
     this.stateLogging = config["stateLogging"] || false;
     this.type = config["type"] || "SWITCH";
+    this.type = this.type.toUpperCase();
     this.debug = config["debug"] || false;
     this.autoOnTimer = config["autoOnTimer"] || [];
 
