@@ -1,3 +1,11 @@
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![npm-version](https://badgen.net/npm/v/homebridge-adguardhome)](https://www.npmjs.com/package/homebridge-adguardhome)
+[![npm-total-downloads](https://badgen.net/npm/dt/homebridge-adguardhome)](https://www.npmjs.com/package/homebridge-adguardhome)
+
+<p align="center">
+<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
+</p>
+
 # Homebridge AdGuard Home
 
 Display AdGuard Home as a lock or switch accesory.
