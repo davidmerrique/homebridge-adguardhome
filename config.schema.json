@@ -70,7 +70,8 @@
         }
       },
       "stateLogging": {
-        "title": "Log State?",
+        "title": "More log",
+        "description": "Display more logs information.",
         "type": "boolean",
         "default": true
       }
