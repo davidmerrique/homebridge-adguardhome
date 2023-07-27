@@ -12,6 +12,7 @@ import {
 } from "homebridge";
 
 import got, { Got } from "got";
+import fs from "fs";
 
 let hap: HAP;
 
@@ -22,38 +23,45 @@ export = (api: API): void => {
 
 class AdGuardHome implements AccessoryPlugin {
   private readonly log: Logging;
+
   private readonly name: string;
   private readonly manufacturer: string;
   private readonly model: string;
   private readonly serial: string;
+  private readonly username: string;
+  private readonly password: string;
+  private readonly host: string;
+  private readonly port: string;
+  private readonly https: boolean;
+  private readonly interval: number;
+  private readonly stateLogging: boolean;
+  private readonly type: string;
+  private readonly debug: boolean;
+  private readonly autoOnTimer: number[];
+  private hideNonTimer: boolean;
 
-  private username: string;
-  private password: string;
-  private host: string;
-  private port: string;
-  private https: boolean;
-  private interval: number;
-  private stateLogging: boolean;
-  private type: string;
-  private debug: boolean;
-  private autoOnTimer: number[];
   private autoOnHandler?: NodeJS.Timeout;
+
   // Cache for accessory status
   private currentState: CharacteristicValue;
   private targetState: CharacteristicValue;
+
   // Accesory States
   private onState: CharacteristicValue;
   private offState: CharacteristicValue;
   private unknownState: CharacteristicValue;
   private jammedState: CharacteristicValue;
+
   // Services
   private accessoryServices: Service[];
   private onAPICall: boolean;
 
+  private readonly storageName: string;
+
   private readonly gotInstance: Got;
   private readonly informationService: Service;
 
-  constructor(log: Logging, config: AccessoryConfig) {
+  constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name;
 
@@ -72,6 +80,7 @@ class AdGuardHome implements AccessoryPlugin {
     this.type = this.type.toUpperCase();
     this.debug = config["debug"] || false;
     this.autoOnTimer = config["autoOnTimer"] || [];
+    this.hideNonTimer = config["hideNonTimer"] || false;
 
     // Setup default states values
     this.onState = this.isLock()
@@ -95,6 +104,9 @@ class AdGuardHome implements AccessoryPlugin {
     ).toString("base64")}`;
     this.onAPICall = false;
 
+    // Get storage path
+    this.storageName = api.user.storagePath() + "/adguardhome_timer.config";
+
     // Get the API handle
     this.gotInstance = got.extend({
       // eslint-disable-next-line prettier/prettier
@@ -108,30 +120,36 @@ class AdGuardHome implements AccessoryPlugin {
       },
     });
 
-    // Create main accessory services
-    if (this.isLock()) {
-      this.accessoryServices = [
-        new hap.Service.LockMechanism(this.name, "main_lock"),
-      ];
-    } else {
-      this.accessoryServices = [
-        new hap.Service.Switch(this.name, "main_switch"),
-      ];
+    // Create main accessory services if needed
+    this.accessoryServices = [];
+    if (!this.hideNonTimer && !this.haveTimers()) {
+      if (this.isLock()) {
+        this.accessoryServices.push(
+          new hap.Service.LockMechanism(this.name, "main_lock")
+        );
+      } else {
+        this.accessoryServices.push(
+          new hap.Service.Switch(this.name, "main_switch")
+        );
+      }
     }
 
     // Create timer accessories
     this.autoOnTimer.forEach((timer, index) => {
       if (timer > 0) {
-        const name = this.timerName(index);
-        const subtype =
-          "timer_" +
-          (this.isLock() ? "lock_" : "switch_") +
-          index +
-          ":" +
-          timer;
+        // eslint-disable-next-line prettier/prettier
+        const subtype = "timer_" + (this.isLock() ? "lock_" : "switch_") + index + ":" + timer;
+
+        let name = this.timerName(index);
+        if (this.hideNonTimer) {
+          name = this.name;
+          this.hideNonTimer = false;
+        }
+
         const service = this.isLock()
           ? new hap.Service.LockMechanism(name, subtype)
           : new hap.Service.Switch(name, subtype);
+
         this.accessoryServices.push(service);
       }
     });
@@ -144,6 +162,9 @@ class AdGuardHome implements AccessoryPlugin {
     // Main loop
     this.loopStates();
 
+    // Check if there is previous unfinished timer, and run it again
+    this.checkUnfinishedTimer();
+
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, this.manufacturer)
       .setCharacteristic(hap.Characteristic.Model, this.model)
@@ -154,6 +175,65 @@ class AdGuardHome implements AccessoryPlugin {
 
   getServices(): Service[] {
     return this.accessoryServices.concat(this.informationService);
+  }
+
+  private createTimerStorage(): Promise<void> {
+    return new Promise((resolve) => {
+      fs.access(this.storageName, fs.constants.F_OK, (err) => {
+        if (err) this.writeTimerStorage("0");
+        resolve();
+      });
+    });
+  }
+
+  private writeTimerStorage(timer: string) {
+    fs.writeFile(this.storageName, timer, "utf8", (err) => {
+      if (err) {
+        this.log.info("Error writing to the file:", err);
+      }
+    });
+  }
+
+  private readTimerStorage(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      fs.readFile(this.storageName, "utf8", (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  }
+
+  private checkUnfinishedTimer() {
+    this.createTimerStorage().then(() => {
+      this.readTimerStorage().then((timer) => {
+        const finalTimer = Number(timer);
+        if (finalTimer > 0) this.runTimer(finalTimer);
+      });
+    });
+  }
+
+  private haveTimers() {
+    this.autoOnTimer.forEach((timer) => {
+      if (timer > 0) return true;
+    });
+    return false;
+  }
+
+  private runTimer(timer: number) {
+    // eslint-disable-next-line prettier/prettier
+    this.log.info(`⏲️ - AdGuard Home will be locked in ${timer} minute${timer > 1 ? "s" : ""}`);
+    this.writeTimerStorage(`${timer}`);
+
+    this.autoOnHandler = setTimeout(() => {
+      // eslint-disable-next-line prettier/prettier
+      this.log.info(`⏲️ - The ${timer} minute${timer > 1 ? "s" : ""} timer finish`);
+      this.setAdGuardHome(this.onState);
+      this.autoOnHandler = undefined;
+      this.writeTimerStorage("0");
+    }, timer * 1000 * 60);
   }
 
   private loopStates() {
@@ -256,18 +336,8 @@ class AdGuardHome implements AccessoryPlugin {
           if (service.subtype?.includes("timer")) {
             const timer = Number(service.subtype.split(":")[1]);
 
-            if (value === this.offState) {
-              // eslint-disable-next-line prettier/prettier
-              this.log.info(`⏲️ - AdGuard Home will be locked in ${timer} minute${timer > 1 ? "s" : ""}`);
-
-              // Do the timer
-              this.autoOnHandler = setTimeout(() => {
-                // eslint-disable-next-line prettier/prettier
-                this.log.info(`⏲️ - The ${timer} minute${timer > 1 ? "s" : ""} timer finish`);
-                this.setAdGuardHome(this.onState);
-                this.autoOnHandler = undefined;
-              }, timer * 1000 * 60);
-            }
+            // Do the timer
+            if (value === this.offState) this.runTimer(timer);
           }
 
           callback(null);

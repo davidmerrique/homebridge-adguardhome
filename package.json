@@ -1,7 +1,7 @@
 {
   "name": "homebridge-adguardhome",
   "displayName": "AdGuard Home",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "AdGuard Home plugin for Homebridge",
   "main": "dist/index.js",
   "license": "MIT",
@@ -27,7 +27,8 @@
     "watch": "tsc --watch",
     "test": "npm link && nodemon",
     "build": "rm -rf ./dist && tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "publish": "npm publish"
   },
   "dependencies": {
     "got": "^11.8.2"

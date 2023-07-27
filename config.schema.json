@@ -39,7 +39,7 @@
       "name": {
         "title": "HomeKit Name",
         "type": "string",
-        "required": false,
+        "required": true,
         "default": "AdGuard Home",
         "description": "A unique name for this accessory."
       },
@@ -68,6 +68,12 @@
           "required": false,
           "default": 0
         }
+      },
+      "hideNonTimer": {
+        "type": "boolean",
+        "title": "Hide non timer",
+        "description": "Hide non timer accessory when you set one or more timer accessories",
+        "default": false
       },
       "stateLogging": {
         "title": "More log",
