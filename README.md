@@ -39,8 +39,9 @@ Display AdGuard Home as a lock or switch accesory.
       "host": "192.168.1.2",
       "port": 80,
       "https": false,
-      "Type": "LOCK",
+      "type": "LOCK",
       "autoOnTimer": [1, 2, 0, 5, 10],
+      "hideNonTimer": true,
       "stateLogging": false
     }
   ]
@@ -50,14 +51,15 @@ Display AdGuard Home as a lock or switch accesory.
 ## Available Options
 
 - "accessory": [**Mandatory**] the plugin name.
-- "name": [**Mandatory**] The name that will appear in Home app.
-- "username": [*Optional*] The AdGuard Home login username.
-- "password": [*Optional*] The AdGuard Home login password.
-- "host": [*Optional*] Hostname or IP of the AdGuard Home server, default is localhost.
-- "port": [*Optional*] The AdGuard Home server port, default is 80.
-- "https": [*Optional*] To use HTTPS or regular HTTP, default is HTTP.
-- "Type": [*Optional*] Choose between SWITCH or LOCK, default is SWITCH.
-- "autoOnTimer": [*Optional*] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App.
-- "stateLogging": [*Optional*] Display more log output.
+- "name": [**Mandatory**] The name that will appear in Home app. Default: AdGuard Home.
+- "username": [*Optional*] The AdGuard Home login username. Default: *empty*.
+- "password": [*Optional*] The AdGuard Home login password. Default: *empty*.
+- "host": [*Optional*] Hostname or IP of the AdGuard Home server. Default: localhost.
+- "port": [*Optional*] The AdGuard Home server port. Default: 80.
+- "https": [*Optional*] To use HTTPS or regular HTTP. Default: HTTP.
+- "Type": [*Optional*] Choose between SWITCH or LOCK. Default: *empty*.
+- "autoOnTimer": [*Optional*] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App. Default: *empty*.
+- "hideNonTimer": [*Optional*] Hide non timer accesory when you set one or more timer accessory. Default: false.
+- "stateLogging": [*Optional*] Display more log output. Default: false.
 
 Or just use [Homebridge Config UI X](https://github.com/homebridge/homebridge-config-ui-x) 👀
