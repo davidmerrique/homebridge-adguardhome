@@ -38,6 +38,7 @@ class AdGuardHome implements AccessoryPlugin {
   private readonly type: string;
   private readonly debug: boolean;
   private readonly autoOnTimer: number[];
+  private activeAutoOnTimer?: string;
   private hideNonTimer: boolean;
 
   private autoOnHandler?: NodeJS.Timeout;
@@ -81,6 +82,9 @@ class AdGuardHome implements AccessoryPlugin {
     this.debug = config["debug"] || false;
     this.autoOnTimer = config["autoOnTimer"] || [];
     this.hideNonTimer = config["hideNonTimer"] || false;
+
+    // Current active timer identifier
+    this.activeAutoOnTimer = undefined;
 
     // Setup default states values
     this.onState = this.isLock()
@@ -149,6 +153,7 @@ class AdGuardHome implements AccessoryPlugin {
         const service = this.isLock()
           ? new hap.Service.LockMechanism(name, subtype)
           : new hap.Service.Switch(name, subtype);
+        service.setCharacteristic(hap.Characteristic.ConfiguredName, name);
 
         this.accessoryServices.push(service);
       }
@@ -180,7 +185,7 @@ class AdGuardHome implements AccessoryPlugin {
   private createTimerStorage(): Promise<void> {
     return new Promise((resolve) => {
       fs.access(this.storageName, fs.constants.F_OK, (err) => {
-        if (err) this.writeTimerStorage("0");
+        if (err) this.writeTimerStorage(`0`);
         resolve();
       });
     });
@@ -188,9 +193,7 @@ class AdGuardHome implements AccessoryPlugin {
 
   private writeTimerStorage(timer: string) {
     fs.writeFile(this.storageName, timer, "utf8", (err) => {
-      if (err) {
-        this.log.info("Error writing to the file:", err);
-      }
+      if (err) this.log.info("Error writing to the file:", err);
     });
   }
 
@@ -209,8 +212,20 @@ class AdGuardHome implements AccessoryPlugin {
   private checkUnfinishedTimer() {
     this.createTimerStorage().then(() => {
       this.readTimerStorage().then((timer) => {
-        const finalTimer = Number(timer);
-        if (finalTimer > 0) this.runTimer(finalTimer);
+        const timerNumber = Number(timer);
+
+        if (Number.isNaN(timerNumber)) {
+          this.writeTimerStorage("0");
+          return;
+        }
+        if (timerNumber === 0) return;
+
+        const now = new Date().getTime();
+        const delta = (timerNumber - now) / (1000 * 60);
+        // eslint-disable-next-line prettier/prettier
+        const finalDelta = delta < 0 ? 0 : delta > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : delta;
+
+        this.runTimer(finalDelta, true);
       });
     });
   }
@@ -222,16 +237,21 @@ class AdGuardHome implements AccessoryPlugin {
     return false;
   }
 
-  private runTimer(timer: number) {
+  private runTimer(timer: number, fromCheckUnfinishedTimer = false) {
+    timer = Math.round(timer * 100) / 100;
+
     // eslint-disable-next-line prettier/prettier
-    this.log.info(`⏲️ - AdGuard Home will be locked in ${timer} minute${timer > 1 ? "s" : ""}`);
-    this.writeTimerStorage(`${timer}`);
+    this.log.info(`⏲️ - ${fromCheckUnfinishedTimer ? `Unfinished timer, ` : ``}AdGuard Home will be locked in ${timer} minute${timer > 1 ? "s" : ""}`);
+
+    const offTimer = new Date().getTime() + timer * 1000 * 60;
+    this.writeTimerStorage(`${offTimer}`);
 
     this.autoOnHandler = setTimeout(() => {
       // eslint-disable-next-line prettier/prettier
       this.log.info(`⏲️ - The ${timer} minute${timer > 1 ? "s" : ""} timer finish`);
       this.setAdGuardHome(this.onState);
       this.autoOnHandler = undefined;
+      this.activeAutoOnTimer = undefined;
       this.writeTimerStorage("0");
     }, timer * 1000 * 60);
   }
@@ -258,41 +278,60 @@ class AdGuardHome implements AccessoryPlugin {
     }, this.interval);
   }
 
+  private isActiveAccesory(accessory) {
+    return (
+      accessory.subtype?.includes("main_") ||
+      (this.activeAutoOnTimer != undefined &&
+        accessory.subtype == this.activeAutoOnTimer)
+    );
+  }
+
   private updateStates() {
-    this.accessoryServices.forEach((accessory) => {
-      if (this.isJammed()) {
+    if (this.isJammed()) {
+      // If jammed, output jammed status
+      this.accessoryServices.forEach((accessory) => {
         accessory
           .getCharacteristic(
             this.isLock()
               ? hap.Characteristic.LockCurrentState
               : hap.Characteristic.On
           )
-          .updateValue(this.currentState);
-      } else if (this.currentState !== this.targetState) {
+          .updateValue(this.jammedState);
+      });
+    } else if (this.currentState !== this.targetState) {
+      // Update to target state
+      // eslint-disable-next-line prettier/prettier
+      this.currentState =
+        this.targetState === this.onState ? this.onState : this.offState;
+
+      this.accessoryServices.forEach((accessory) => {
+        const isActiveAccesory = this.isActiveAccesory(accessory);
         // eslint-disable-next-line prettier/prettier
-        this.currentState =
-          this.targetState === this.onState ? this.onState : this.offState;
+        const currentState = isActiveAccesory ? this.currentState : this.onState;
+        const targetState = isActiveAccesory ? this.targetState : this.onState;
 
         if (this.isLock()) {
           accessory
             .getCharacteristic(hap.Characteristic.LockCurrentState)
-            .updateValue(this.currentState);
+            .updateValue(currentState);
           accessory
             .getCharacteristic(hap.Characteristic.LockTargetState)
-            .updateValue(this.targetState);
+            .updateValue(targetState);
         } else {
           accessory
             .getCharacteristic(hap.Characteristic.On)
-            .updateValue(this.currentState);
+            .updateValue(currentState);
         }
 
-        // eslint-disable-next-line prettier/prettier
-        this.log(`Current status: ${this.currentState ? "🟢 Locked" : "🔴 Unlocked"}`);
-      }
-      if (this.stateLogging)
-        // eslint-disable-next-line prettier/prettier
-        this.log.info("Updating", accessory.displayName, ":", this.currentState ? "🟢 Locked" : "🔴 Unlocked");
-    });
+        if (isActiveAccesory)
+          // eslint-disable-next-line prettier/prettier
+          this.log(accessory.displayName, `- Current status: ${currentState ? "🟢 Locked" : "🔴 Unlocked"}`);
+
+        if (this.stateLogging)
+          // eslint-disable-next-line prettier/prettier
+          this.log.info(accessory.displayName, " - Updating :", currentState ? "🟢 Locked" : "🔴 Unlocked");
+      });
+    }
   }
 
   private timerName(index: number) {
@@ -317,12 +356,18 @@ class AdGuardHome implements AccessoryPlugin {
           ? hap.Characteristic.LockTargetState
           : hap.Characteristic.On
       )
+      // Get accessories value
       .on(
         CharacteristicEventTypes.GET,
         (callback: CharacteristicGetCallback) => {
-          callback(null, this.targetState);
+          // Return correct value only if it's main accessory or current timer accessory
+          callback(
+            null,
+            this.isActiveAccesory(service) ? this.targetState : this.onState
+          );
         }
       )
+      // Set accessories value
       .on(
         CharacteristicEventTypes.SET,
         (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
@@ -336,6 +381,8 @@ class AdGuardHome implements AccessoryPlugin {
           if (service.subtype?.includes("timer")) {
             const timer = Number(service.subtype.split(":")[1]);
 
+            this.activeAutoOnTimer = service.subtype;
+
             // Do the timer
             if (value === this.offState) this.runTimer(timer);
           }
@@ -347,10 +394,11 @@ class AdGuardHome implements AccessoryPlugin {
     if (this.isLock()) {
       service
         .getCharacteristic(hap.Characteristic.LockCurrentState)
+        // Get accessories value for lock accessories
         .on(
           CharacteristicEventTypes.GET,
           (callback: CharacteristicGetCallback) => {
-            // Call API one in a time
+            // Limit API call one in a time
             if (!this.onAPICall) {
               this.onAPICall = true;
               this.gotInstance("status")
@@ -369,12 +417,20 @@ class AdGuardHome implements AccessoryPlugin {
                   this.accessoryServices.forEach((service) => {
                     service
                       .getCharacteristic(hap.Characteristic.LockCurrentState)
-                      .updateValue(this.currentState);
+                      .updateValue(
+                        this.isActiveAccesory(service)
+                          ? this.currentState
+                          : this.onState
+                      );
                   });
                 });
             }
 
-            callback(null, this.currentState);
+            // Return correct value only if it's main accessory or current timer accessory
+            callback(
+              null,
+              this.isActiveAccesory(service) ? this.currentState : this.onState
+            );
           }
         );
     }
@@ -386,11 +442,9 @@ class AdGuardHome implements AccessoryPlugin {
       if (this.debug) {
         if (error.response) this.log.error(error.response.body);
         else this.log.error(error);
-      } else this.log.info("🤷 Accessory is offline or unreachable");
+      } else this.log.info("🤷 AdGuard Home is offline or unreachable");
 
-      if (this.type == "LOCK")
-        this.currentState = hap.Characteristic.LockCurrentState.JAMMED;
-      else this.currentState = "JAMMED";
+      this.currentState = this.jammedState;
     }
   }
 
@@ -408,7 +462,7 @@ class AdGuardHome implements AccessoryPlugin {
         this.targetState =
           status === this.onState ? this.onState : this.offState;
         // eslint-disable-next-line prettier/prettier
-        this.log.info(`Seting to: ${status === this.onState ? "🟢 Locked" : "🔴 Unlocked"}`);
+        this.log.info(`Setting to: ${status === this.onState ? "🟢 Locked" : "🔴 Unlocked"}`);
 
         this.updateStates();
       })
