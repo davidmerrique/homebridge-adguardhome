@@ -13,7 +13,6 @@ Display AdGuard Home as a lock or switch accesory.
 ## Notes
 
 1. When updating from 1.5.1 to 1.6.0 you might need to re-add your accessories again in Home app.
-2. When creating multiple timer, Home app will assign the same name for all accessories, this is expected behaviour 🤷🏽‍♂️. You need to rename them manually.
 
 ## Requirements
 
