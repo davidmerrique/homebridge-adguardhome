@@ -72,7 +72,7 @@
       "hideNonTimer": {
         "type": "boolean",
         "title": "Hide non timer",
-        "description": "Hide non timer accessory when you set one or more timer accessories",
+        "description": "Hide non timer accessory when there is one or more timer accessories",
         "default": false
       },
       "stateLogging": {
