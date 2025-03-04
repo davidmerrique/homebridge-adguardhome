@@ -1,3 +1,14 @@
 .vscode
 dist
 node_modules
+yarn.lock
+package-lock.json
+
+# Homebridge
+accessories/
+backups/
+persist/
+.uix-*
+config.json
+auth.json
+adguardhome_timer.config

@@ -4,6 +4,13 @@
   "schema": {
     "type": "object",
     "properties": {
+      "name": {
+        "title": "Plugin Name",
+        "type": "string",
+        "required": true,
+        "default": "AdGuard Home",
+        "description": "AdGuard Home plugin for Homebridge."
+      },
       "host": {
         "title": "IP Address / Hostname",
         "type": "string",
@@ -35,13 +42,6 @@
         "type": "string",
         "required": false,
         "description": "AdGuard Home password."
-      },
-      "name": {
-        "title": "HomeKit Name",
-        "type": "string",
-        "required": true,
-        "default": "AdGuard Home",
-        "description": "A unique name for this accessory."
       },
       "type": {
         "type": "string",
