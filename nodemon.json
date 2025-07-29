@@ -1,12 +1,10 @@
 {
-	"watch": [
-		"dist/index.js"
-	],
-	"ext": "ts",
-	"ignore": [],
-	"exec": "homebridge -I -D -U ./ > homebridge.log",
-	"signal": "SIGTERM",
-	"env": {
-		"NODE_OPTIONS": "--trace-warnings"
-	}
+  "watch": ["dist/index.js"],
+  "ext": "ts",
+  "ignore": [],
+  "exec": "npm link && homebridge -I -D -U ./",
+  "signal": "SIGTERM",
+  "env": {
+    "NODE_OPTIONS": "--trace-warnings"
+  }
 }

@@ -1,9 +1,10 @@
 {
   "name": "homebridge-adguardhome",
   "displayName": "AdGuard Home",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "description": "AdGuard Home plugin for Homebridge",
-  "main": "dist/index.js",
+  "exports": "./dist/index.js",
+  "type": "module",
   "license": "MIT",
   "keywords": [
     "homebridge-plugin",
@@ -19,13 +20,12 @@
     "url": "https://github.com/davidmerrique/homebridge-adguardhome/issues"
   },
   "engines": {
-    "homebridge": "^1.6.0 || ^2.0.0-beta.0",
-    "node": "^18.20.4 || ^20.15.1 || ^22"
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0",
+    "node": "^18 || ^20 || ^22 || ^24"
   },
   "scripts": {
-    "lint": "eslint src/**.ts",
     "watch": "tsc --watch",
-    "test": "npm link && nodemon",
+    "test": "nodemon",
     "build": "rm -rf ./dist && tsc",
     "prepublishOnly": "npm run build",
     "publish": "npm publish"
@@ -35,18 +35,20 @@
     "url": "https://buymeacoffee.com/dwaan"
   },
   "dependencies": {
-    "got": "^11.8.2"
+    "crypto": "^1.0.1",
+    "got": "^14.4.7",
+    "unixpass": "^3.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "@typescript-eslint/eslint-plugin": "^8.24.1",
-    "@typescript-eslint/parser": "^8.24.1",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "homebridge": "^1.6.0",
-    "prettier": "^3.5.1",
+    "@types/node": "^24.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
+    "homebridge": "^1.8.0",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }

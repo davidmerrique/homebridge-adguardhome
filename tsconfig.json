@@ -1,8 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "module": "commonjs",
-    "lib": ["ES2015", "ES2016", "ES2017", "ES2018", "DOM"],
+    "module": "node16",
+    "lib": [
+      "ES2015",
+      "ES2016",
+      "ES2017",
+      "ES2018",
+      "DOM"
+    ],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -11,9 +17,16 @@
     "strict": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
-    "moduleResolution": "node",
-    "types": ["node"]
+    "moduleResolution": "node16",
+    "types": [
+      "node"
+    ]
   },
-  "typeAcquisition": { "enable": true },
-  "include": ["src", "./node_modules/@types/node/index.d.ts"]
+  "typeAcquisition": {
+    "enable": true
+  },
+  "include": [
+    "src",
+    "./node_modules/@types/node/index.d.ts"
+  ]
 }

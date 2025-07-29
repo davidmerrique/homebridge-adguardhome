@@ -43,6 +43,13 @@
         "required": false,
         "description": "AdGuard Home password."
       },
+      "isGlinet": {
+        "title": "GL-iNet Router",
+        "type": "boolean",
+        "required": true,
+        "default": false,
+        "description": "Use GL-iNet router API to connect to AdGuard Home server."
+      },
       "type": {
         "type": "string",
         "title": "HomeKit Accesory Type",
@@ -76,8 +83,8 @@
         "default": false
       },
       "stateLogging": {
-        "title": "More log",
-        "description": "Display more logs information.",
+        "title": "State Log",
+        "description": "Display more information logs about accessory state.",
         "type": "boolean",
         "default": true
       }
