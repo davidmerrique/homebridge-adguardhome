@@ -25,3 +25,4 @@ homebridge.log
 config.schema.json
 adguardhome_timer.config
 src/glinet.ts
+adguardhome-timer.config
