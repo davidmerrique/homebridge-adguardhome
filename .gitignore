@@ -19,7 +19,9 @@ persist/
 
 # Files
 .uix-*
-config.json
 auth.json
-adguardhome_timer.config
+config.json
 homebridge.log
+config.schema.json
+adguardhome_timer.config
+src/glinet.ts
