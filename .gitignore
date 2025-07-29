@@ -1,14 +1,25 @@
-.vscode
-dist
-node_modules
+# Common
+
+# Flders
+.vscode/
+dist/
+node_modules/
+
+# Files
 yarn.lock
 package-lock.json
 
+
 # Homebridge
+
+# Folders
 accessories/
 backups/
 persist/
+
+# Files
 .uix-*
 config.json
 auth.json
 adguardhome_timer.config
+homebridge.log
