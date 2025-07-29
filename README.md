@@ -38,6 +38,7 @@ Display AdGuard Home as a lock or switch accesory.
       "host": "192.168.1.2",
       "port": 80,
       "https": false,
+      "isGlinet: false,
       "type": "LOCK",
       "autoOnTimer": [1, 2, 0, 5, 10],
       "hideNonTimer": true,
@@ -56,6 +57,7 @@ Display AdGuard Home as a lock or switch accesory.
 - "host": [*Optional*] Hostname or IP of the AdGuard Home server. Default: localhost.
 - "port": [*Optional*] The AdGuard Home server port. Default: 80.
 - "https": [*Optional*] To use HTTPS or regular HTTP. Default: HTTP.
+- "isGlinet": [*Optional"] Plugins will use GL-iNet router API to connect to AdGuard Home server. However the status will not be reflected inside AdGuard Home web interface, instead will be reflected inside GL-iNet web interface. Default: false.
 - "Type": [*Optional*] Choose between SWITCH or LOCK. Default: *empty*.
 - "autoOnTimer": [*Optional*] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App. Default: *empty*.
 - "hideNonTimer": [*Optional*] Hide non timer accesory when you set one or more timer accessory. Default: false.
