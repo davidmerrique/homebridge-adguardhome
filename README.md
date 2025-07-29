@@ -38,7 +38,7 @@ Display AdGuard Home as a lock or switch accesory.
       "host": "192.168.1.2",
       "port": 80,
       "https": false,
-      "isGlinet: false,
+      "isGlinet": false,
       "type": "LOCK",
       "autoOnTimer": [1, 2, 0, 5, 10],
       "hideNonTimer": true,
