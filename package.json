@@ -1,43 +1,55 @@
 {
   "name": "homebridge-adguardhome",
   "displayName": "AdGuard Home",
-  "version": "1.8.0-beta.2",
-  "description": "AdGuard Home plugin for Homebridge",
-  "exports": "./index.js",
   "type": "module",
+  "version": "2.0.0-beta.0",
+  "private": true,
+  "description": "AdGuard Home plugin for Homebridge",
+  "author": "Dwan",
   "license": "MIT",
+  "homepage": "git://github.com/davidmerrique/homebridge-adguardhome#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidmerrique/homebridge-adguardhome.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davidmerrique/homebridge-adguardhome/issues"
+  },
   "keywords": [
     "homebridge-plugin",
     "adguard",
     "homebridge",
     "homekit"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/davidmerrique/homebridge-adguardhome.git"
-  },
-  "bugs": {
-    "url": "https://github.com/davidmerrique/homebridge-adguardhome/issues"
-  },
+  "main": "dist/index.js",
   "engines": {
-    "node": "^20.19.0 || ^22.12.0 || ^24.0.0",
+    "node": "^18.20.4 || ^20.18.0 || ^22.10.0",
     "homebridge": "^1.8.0 || ^2.0.0-beta.0"
   },
   "scripts": {
-    "test": "nodemon",
-    "testPublish": "npm publish --dry-run"
+    "build": "rimraf ./dist && tsc",
+    "lint": "eslint . --max-warnings=0",
+    "prepublishOnly": "npm run lint && npm run build",
+    "watch": "npm run build && npm link && nodemon"
   },
   "funding": {
     "type": "buymeacoffee",
     "url": "https://buymeacoffee.com/dwaan"
   },
   "dependencies": {
-    "crypto": "^1.0.1",
     "got": "^14.4.7",
+    "homebridge-lib": "^7.1.4",
     "unixpass": "^3.0.1"
   },
   "devDependencies": {
-    "homebridge": "^1.11.0",
-    "nodemon": "^3.1.10"
+    "@eslint/js": "^9.21.0",
+    "@types/node": "^22.13.5",
+    "eslint": "^9.21.0",
+    "homebridge": "^2.0.0-beta.0",
+    "nodemon": "^3.1.9",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.1"
   }
 }

@@ -1,8 +1,10 @@
 {
-  "watch": ["index.js"],
+  "watch": [
+    "src"
+  ],
   "ext": "ts",
   "ignore": [],
-  "exec": "npm link && homebridge -I -D -U ./",
+  "exec": "tsc && homebridge -U ./test/hbConfig -D",
   "signal": "SIGTERM",
   "env": {
     "NODE_OPTIONS": "--trace-warnings"
