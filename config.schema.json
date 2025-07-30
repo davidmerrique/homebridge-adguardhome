@@ -12,7 +12,7 @@
         "description": "AdGuard Home plugin for Homebridge."
       },
       "host": {
-        "title": "IP Address / Hostname",
+        "title": "IP Address/Hostname",
         "type": "string",
         "required": true,
         "format": "hostname",

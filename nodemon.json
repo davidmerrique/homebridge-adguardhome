@@ -1,5 +1,5 @@
 {
-  "watch": ["dist/index.js"],
+  "watch": ["index.js"],
   "ext": "ts",
   "ignore": [],
   "exec": "npm link && homebridge -I -D -U ./",
