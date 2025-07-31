@@ -76,8 +76,8 @@ export class AdGuardHomePlatformAccessory {
     this.manufacturer = config.manufacturer || 'Homebridge';
     this.model = config.model || 'AdGuard Home';
     this.serial = config['serial-number'] || '123-456-789';
-    this.username = config.username;
-    this.password = config.password;
+    this.username = config.username || '';
+    this.password = config.password || '';
     this.host = config.host || 'localhost';
     this.port = config.port || 80;
     this.https = !!config.https;
@@ -328,7 +328,7 @@ export class AdGuardHomePlatformAccessory {
           this.log.error(`🐞 - ${this.name} - Offline - ${error}`);
         }
       } else if ((this.isGlinet && this.glinetSid !== undefined) || !this.isGlinet) {
-        this.log.info('🫥 - ${this.name} - Device is offline or unreachable');
+        this.log.info(`🫥 - ${this.name} - Device is offline or unreachable`);
       } 
 
       this.currentState = this.jammedState;

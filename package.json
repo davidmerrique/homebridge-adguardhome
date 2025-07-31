@@ -1,13 +1,19 @@
 {
   "name": "homebridge-adguardhome",
-  "displayName": "AdGuard Home",
+  "displayName": "Homebridge AdGuard Home",
   "type": "module",
   "version": "2.0.0-beta.0",
   "private": true,
-  "description": "AdGuard Home plugin for Homebridge",
-  "author": "Dwan",
+  "description": "Homebridge plugin for AdGuard Home",
+  "author": "davidmerrique",
+  "maintainers": [
+    {
+      "email": "me@dwaan.com",
+      "name": "Dwan"
+    }
+  ],
   "license": "MIT",
-  "homepage": "git://github.com/davidmerrique/homebridge-adguardhome#readme",
+  "homepage": "https://github.com/davidmerrique/homebridge-adguardhome#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/davidmerrique/homebridge-adguardhome.git"
@@ -51,5 +57,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.24.1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

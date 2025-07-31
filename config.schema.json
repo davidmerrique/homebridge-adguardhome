@@ -1,93 +1,191 @@
 {
   "pluginAlias": "AdGuardHome",
-  "pluginType": "accessory",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "Homebridge plugin for AdGuard Home and AdGuard Home integrated inside GL-iNet router",
+  "footerDisplay": "For more information, see the [README](https://github.com/davidmerrique/homebridge-adguardhome#readme)",
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Plugin Name",
-        "type": "string",
-        "required": true,
-        "default": "AdGuard Home",
-        "description": "AdGuard Home plugin for Homebridge."
-      },
-      "host": {
-        "title": "IP Address/Hostname",
-        "type": "string",
-        "required": true,
-        "format": "hostname",
-        "default": "localhost",
-        "description": "AdGuard Home hostname, the default is localhost."
-      },
-      "https": {
-        "title": "Use HTTPS?",
-        "type": "boolean",
-        "default": false
-      },
-      "port": {
-        "title": "Port",
-        "type": "integer",
-        "required": false,
-        "default": 80,
-        "description": "AdGuard Home port, the default is 80."
-      },
-      "username": {
-        "title": "Username",
-        "type": "string",
-        "required": false,
-        "description": "AdGuard Home username."
-      },
-      "password": {
-        "title": "Password",
-        "type": "string",
-        "required": false,
-        "description": "AdGuard Home password."
-      },
-      "isGlinet": {
-        "title": "GL-iNet Router",
-        "type": "boolean",
-        "required": true,
-        "default": false,
-        "description": "Use GL-iNet router API to connect to AdGuard Home server."
-      },
-      "type": {
-        "type": "string",
-        "title": "HomeKit Accesory Type",
-        "description": "Display accessory as regular switch or security lock. For security lock, it have extra jammed state when plugins can't connect to AdGuard Home server.",
-        "oneOf": [
-          {
-            "title": "Switch",
-            "enum": ["SWITCH"]
-          },
-          {
-            "title": "Lock",
-            "enum": ["LOCK"]
-          }
-        ]
-      },
-      "autoOnTimer": {
-        "title": "Timers",
+      "accessories": {
+        "title": "AdGuard Home",
         "type": "array",
-        "description": "How long in x minute(s) the AdGuard Home need to be turned on after it turned off. Set to 0 to disable and hide timer.",
+        "required": true,
         "items": {
-          "title": "Timer",
-          "type": "integer",
-          "required": false,
-          "default": 0
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true,
+              "description": "Please provide unique name for each configuration. Name is can be use to send command with Siri."
+            },
+            "host": {
+              "title": "IP Address/Hostname",
+              "type": "string",
+              "required": true,
+              "format": "hostname",
+              "default": "localhost",
+              "description": "AdGuard Home IP address or hostname."
+            },
+            "https": {
+              "title": "Use HTTPS?",
+              "type": "boolean",
+              "default": false,
+              "description": "Use HTTPS to connect to AdGuard Home."
+            },
+            "port": {
+              "title": "Port",
+              "type": "integer",
+              "required": false,
+              "default": 80,
+              "description": "AdGuard Home port."
+            },
+            "username": {
+              "title": "Username",
+              "type": "string",
+              "required": true,
+              "description": "AdGuard Home username."
+            },
+            "password": {
+              "title": "Password",
+              "type": "string",
+              "required": true,
+              "description": "AdGuard Home password."
+            },
+            "isGlinet": {
+              "title": "GL-iNet Router",
+              "type": "boolean",
+              "required": true,
+              "default": false,
+              "description": "Use GL-iNet router API to connect to AdGuard Home."
+            },
+            "type": {
+              "type": "string",
+              "title": "HomeKit Accesory Type",
+              "description": "Display accessory as regular switch or security lock. For security lock, it have extra Jammed state when plugins can't connect to AdGuard Home.",
+              "oneOf": [
+                {
+                  "title": "Switch",
+                  "enum": ["SWITCH"]
+                },
+                {
+                  "title": "Lock",
+                  "enum": ["LOCK"]
+                }
+              ]
+            },
+            "autoOnTimer": {
+              "title": "Auto On Timer",
+              "type": "integer",
+              "required": false,
+              "default": 0,
+              "description": "Timer in minutes to turn On AdGuard Home automatically after it turned Off. Set to 0 to disable timer."
+            },
+            "stateLogging": {
+              "title": "State Log",
+              "type": "boolean",
+              "default": false,
+              "description": "Display more information logs about accessory state."
+            }
+          }
         }
       },
-      "hideNonTimer": {
+      "debug": {
         "type": "boolean",
-        "title": "Hide non timer",
-        "description": "Hide non timer accessory when there is one or more timer accessories",
-        "default": false
-      },
-      "stateLogging": {
-        "title": "State Log",
-        "description": "Display more information logs about accessory state.",
-        "type": "boolean",
-        "default": true
+        "title": "Extra debug messages",
+        "default": "false"
       }
     }
-  }
+  },
+  "layout": [
+    {
+      "key": "accessories",
+      "type": "array",
+      "items": [
+        {
+          "type": "flex",
+          "items": [
+            {
+              "type": "flex",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {
+                  "key": "accessories[].name"
+                }
+              ]
+            },
+            {
+              "type": "flex",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {
+                  "key": "accessories[].host",
+                  "flex": "2 2 66.66%"
+                },
+                {
+                  "key": "accessories[].port",
+                  "flex": "1 1 33.33%"
+                }
+              ]
+            },
+            {
+              "type": "flex",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {
+                  "key": "accessories[].https",
+                  "flex": "1 1 33.33%"
+                },
+                {
+                  "key": "accessories[].isGlinet",
+                  "flex": "1 1 33.33%"
+                },
+                {
+                  "key": "accessories[].stateLogging",
+                  "flex": "1 1 33.33%"
+                }
+              ]
+            },
+            {
+              "type": "flex",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {
+                  "key": "accessories[].username"
+                },
+                {
+                  "key": "accessories[].password"
+                }
+              ]
+            },
+            {
+              "type": "flex",
+              "displayFlex": true,
+              "flex-direction": "row",
+              "items": [
+                {
+                  "key": "accessories[].type",
+                  "flex": "2 2 66.66%"
+                },
+                {
+                  "key": "accessories[].autoOnTimer",
+                  "flex": "1 1 33.33%"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    { 
+      "key": "debug",
+      "type": "boolean",
+      "default": false
+    }
+  ]
 }

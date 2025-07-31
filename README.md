@@ -29,20 +29,24 @@ Display AdGuard Home as a lock or switch accesory.
     "port": 51826,
     "pin": "031-45-154"
   },
-  "accessories": [
+  "platforms": [
     {
-      "accessory": "AdGuardHome",
-      "name": "AdGuard",
-      "username": "ADGUARD_USERNAME",
-      "password": "ADGUARD_PASSWORD",
-      "host": "192.168.1.2",
-      "port": 80,
-      "https": false,
-      "isGlinet": false,
-      "type": "LOCK",
-      "autoOnTimer": [1, 2, 0, 5, 10],
-      "hideNonTimer": true,
-      "stateLogging": false
+      "accessories": [
+        {
+          "name": "AdGuard",
+          "username": "ADGUARD_USERNAME",
+          "password": "ADGUARD_PASSWORD",
+          "https": false,
+          "host": "192.168.1.2",
+          "port": 80,
+          "isGlinet": false,
+          "type": "LOCK",
+          "autoOnTimer": 0,
+          "stateLogging": false
+        }
+      ],
+      "debug": true,
+      "platform": "AdGuardHome"
     }
   ]
 }
@@ -50,17 +54,22 @@ Display AdGuard Home as a lock or switch accesory.
 
 ## Available Options
 
-- "accessory": [**Mandatory**] the plugin name.
-- "name": [**Mandatory**] The name that will appear in Home app. Default: AdGuard Home.
-- "username": [*Optional*] The AdGuard Home login username. Default: *empty*.
-- "password": [*Optional*] The AdGuard Home login password. Default: *empty*.
+Accesories options:
+
+- "name": [**Mandatory**] The name that will appear in Home app. Please provide unique name for eact acceory. Default: AdGuard Home.
+- "username": [*Mandatory*] The AdGuard Home login username. Default: *empty*.
+- "password": [*Mandatory*] The AdGuard Home login password. Default: *empty*.
+- "https": [*Optional*] To use HTTPS or regular HTTP. Default: HTTP.
 - "host": [*Optional*] Hostname or IP of the AdGuard Home server. Default: localhost.
 - "port": [*Optional*] The AdGuard Home server port. Default: 80.
-- "https": [*Optional*] To use HTTPS or regular HTTP. Default: HTTP.
 - "isGlinet": [*Optional"] Plugins will use GL-iNet router API to connect to AdGuard Home server. However the status will not be reflected inside AdGuard Home web interface, instead will be reflected inside GL-iNet web interface. Default: false.
-- "Type": [*Optional*] Choose between SWITCH or LOCK. Default: *empty*.
+- "type": [*Optional*] Choose between SWITCH or LOCK. Default: *empty*.
 - "autoOnTimer": [*Optional*] Auto on timer, 0 timer will be ignored. Will created multiple accessories in Home App. Default: *empty*.
-- "hideNonTimer": [*Optional*] Hide non timer accesory when you set one or more timer accessory. Default: false.
 - "stateLogging": [*Optional*] Display more log output. Default: false.
+
+Platform options:
+
+- "debug": [*Optional*] Output debug log to Homebdirg log. Default: false.
+- "platform": [**Mandatory**] Default: "AdGuardHome".
 
 Or just use [Homebridge Config UI X](https://github.com/homebridge/homebridge-config-ui-x) 👀
