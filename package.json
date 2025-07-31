@@ -16,7 +16,7 @@
   "homepage": "https://github.com/davidmerrique/homebridge-adguardhome#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/davidmerrique/homebridge-adguardhome.git"
+    "url": "git://github.com/davidmerrique/homebridge-adguardhome.git"
   },
   "bugs": {
     "url": "https://github.com/davidmerrique/homebridge-adguardhome/issues"
