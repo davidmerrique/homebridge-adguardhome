@@ -70,6 +70,7 @@ export class AdGuardHomePlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
         existingAccessory.context.device = device;
+        existingAccessory.context.uuid = uuid;
         existingAccessory.context.debug = this.config.debug;
         this.api.updatePlatformAccessories([existingAccessory]);
 
@@ -91,6 +92,7 @@ export class AdGuardHomePlatform implements DynamicPlatformPlugin {
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.device = device;
+        accessory.context.uuid = uuid;
         accessory.context.debug = this.config.debug;
 
         // create the accessory handler for the newly create accessory
