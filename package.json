@@ -3,7 +3,6 @@
   "displayName": "Homebridge AdGuard Home",
   "type": "module",
   "version": "2.0.0-beta.0",
-  "private": true,
   "description": "Homebridge plugin for AdGuard Home",
   "author": "davidmerrique",
   "maintainers": [
