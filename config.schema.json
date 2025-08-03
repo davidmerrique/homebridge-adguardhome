@@ -60,6 +60,13 @@
               "default": false,
               "description": "Use GL-iNet router API to connect to AdGuard Home."
             },
+            "interval": {
+              "title": "Pooling Interval",
+              "type": "integer",
+              "required": false,
+              "default": 5,
+              "description": "How long in seconds for plugins to check AdGuard Home status."
+            },
             "type": {
               "type": "string",
               "title": "HomeKit Accesory Type",
@@ -170,10 +177,14 @@
               "items": [
                 {
                   "key": "accessories[].type",
-                  "flex": "2 2 66.66%"
+                  "flex": "1 1 33.33%"
                 },
                 {
                   "key": "accessories[].autoOnTimer",
+                  "flex": "1 1 33.33%"
+                },
+                {
+                  "key": "accessories[].interval",
                   "flex": "1 1 33.33%"
                 }
               ]

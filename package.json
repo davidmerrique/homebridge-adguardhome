@@ -2,7 +2,7 @@
   "name": "homebridge-adguardhome",
   "displayName": "Homebridge AdGuard Home",
   "type": "module",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "description": "Homebridge plugin for AdGuard Home",
   "author": "davidmerrique",
   "maintainers": [
@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "got": "^14.4.7",
-    "homebridge-lib": "^7.1.4",
     "unixpass": "^3.0.1"
   },
   "devDependencies": {
