@@ -2,7 +2,7 @@
   "pluginAlias": "AdGuardHome",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Homebridge plugin for AdGuard Home and AdGuard Home integrated inside GL-iNet router",
+  "headerDisplay": "Homebridge plugin for AdGuard Home and GL-iNet router with integrated AdGuard Home",
   "footerDisplay": "For more information, see the [README](https://github.com/davidmerrique/homebridge-adguardhome#readme)",
   "schema": {
     "type": "object",
@@ -26,7 +26,7 @@
               "required": true,
               "format": "hostname",
               "default": "localhost",
-              "description": "AdGuard Home IP address or hostname."
+              "description": "AdGuard Home IP address or hostname. For GL-iNet router, use your router IP address."
             },
             "https": {
               "title": "Use HTTPS?",
@@ -39,38 +39,39 @@
               "type": "integer",
               "required": false,
               "default": 80,
-              "description": "AdGuard Home port."
+              "description": "AdGuard Home port. If you're using GL-iNet router, the default port is 3000."
             },
             "username": {
               "title": "Username",
               "type": "string",
               "required": true,
-              "description": "AdGuard Home username."
+              "default": "root",
+              "description": "AdGuard Home username. The default user GL-iNet router user is root."
             },
             "password": {
               "title": "Password",
               "type": "string",
               "required": true,
-              "description": "AdGuard Home password."
+              "description": "AdGuard Home password. For GL-iNet router, type your the web login password."
             },
             "isGlinet": {
               "title": "GL-iNet Router",
               "type": "boolean",
               "required": true,
               "default": false,
-              "description": "Use GL-iNet router API to connect to AdGuard Home."
+              "description": "Use GL-iNet router credential to connect to AdGuard Home."
             },
             "interval": {
               "title": "Pooling Interval",
               "type": "integer",
               "required": false,
               "default": 5,
-              "description": "How long in seconds for plugins to check AdGuard Home status."
+              "description": "How long in seconds for plugin to check AdGuard Home status."
             },
             "type": {
               "type": "string",
               "title": "HomeKit Accesory Type",
-              "description": "Display accessory as regular switch or security lock. For security lock, it have extra Jammed state when plugins can't connect to AdGuard Home.",
+              "description": "Display accessory as regular switch or security lock. For security lock, the Jammed state means plugin can't connect to AdGuard Home server.",
               "oneOf": [
                 {
                   "title": "Switch",
@@ -87,7 +88,7 @@
               "type": "integer",
               "required": false,
               "default": 0,
-              "description": "Timer in minutes to turn On AdGuard Home automatically after it turned Off. Set to 0 to disable timer."
+              "description": "Timer in minutes to automatically turn On AdGuard Home after it turned Off. Set to 0 to disable timer."
             },
             "stateLogging": {
               "title": "State Log",

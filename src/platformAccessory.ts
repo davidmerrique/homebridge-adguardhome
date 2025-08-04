@@ -5,7 +5,7 @@ import type { AdGuardHomePlatform } from './platform.js';
 import * as fs from 'node:fs/promises';
 import { crypt } from 'unixpass';
 import { createHash } from 'crypto';
-import got, { Got } from 'got';
+import got, { Got, ExtendOptions } from 'got';
 
 /**
  * Platform Accessory
@@ -14,9 +14,9 @@ import got, { Got } from 'got';
  */
 export class AdGuardHomePlatformAccessory {
   private service: Service;
+
   private readonly log: Logging;
   private readonly hap: HAP;
-
   private readonly name: string;
   private readonly manufacturer: string;
   private readonly model: string;
@@ -27,7 +27,7 @@ export class AdGuardHomePlatformAccessory {
   private readonly port: string;
   private readonly https: boolean;
   private readonly url: string;
-  private readonly rpc: string;
+  private readonly glinetUrl: string;
   private readonly isGlinet: boolean;
   private readonly interval: number;
   private readonly stateLogging: boolean;
@@ -48,9 +48,9 @@ export class AdGuardHomePlatformAccessory {
   private autoOnHandler?: NodeJS.Timeout;
   private glinetSid?: string;
   private glinetSidTimeout?: NodeJS.Timeout;
+  private gotInstance: Got;
 
   private readonly storageName: string;
-  private readonly gotInstance?: Got;
 
   constructor(
     private readonly platform: AdGuardHomePlatform,
@@ -74,7 +74,7 @@ export class AdGuardHomePlatformAccessory {
     this.port = config.port || 80;
     this.https = !!config.https;
     this.url = `http${this.https ? 's' : ''}://${this.host}:${this.port}`;
-    this.rpc = `${this.url}/rpc`;
+    this.glinetUrl = `http${this.https ? 's' : ''}://${this.host}:80/rpc`;
     this.isGlinet = config.isGlinet || false;
     this.interval = config.interval || 5;
     this.interval = this.interval * 1000;
@@ -96,25 +96,9 @@ export class AdGuardHomePlatformAccessory {
     // Get storage path
     this.storageName = `${api.user.storagePath()}/adguardhome-${this.accessory.context.uuid}-timer.config`;
 
-    // Get API handle for regular AdGuard Home server
-    if (!this.isGlinet) {
-      // Authorization to API
-      const Authorization = `Basic ${Buffer.from(
-        `${this.username}:${this.password}`,
-      ).toString('base64')}`;
+    // Get the API default handler for regular AdGuard Home
+    this.gotInstance = got.extend(this.gotOptions());
 
-      // Get the API default handler
-      this.gotInstance = got.extend({
-        prefixUrl: `${this.url}/control`,
-        responseType: 'json',
-        headers: {
-          Authorization,
-        },
-        https: {
-          rejectUnauthorized: false,
-        },
-      });
-    }
     // set accessory information
     this.accessory.getService(service.AccessoryInformation)!
       .setCharacteristic(characteristic.Manufacturer, this.manufacturer)
@@ -153,6 +137,38 @@ export class AdGuardHomePlatformAccessory {
     this.log.info(`🛡️ - ${this.name} - Finish initializing!`);
   }
 
+  // Generate Got options
+  private gotOptions(sid: string = 'REPLACE_WITH_GLINET_SID'): ExtendOptions {
+    if (this.isGlinet) {
+      return {
+        prefixUrl: `${this.url}/control`,
+        responseType: 'json',
+        headers: {
+          'Cookie': `Admin-Token=${sid}`,
+        },
+        https: {
+          rejectUnauthorized: false,
+        },
+      };
+    } else {
+      // Authorization to API
+      const Authorization = `Basic ${Buffer.from(
+        `${this.username}:${this.password}`,
+      ).toString('base64')}`;
+
+      return {
+        prefixUrl: `${this.url}/control`,
+        responseType: 'json',
+        headers: {
+          Authorization,
+        },
+        https: {
+          rejectUnauthorized: false,
+        },
+      };
+    }
+  }
+
   // Check if type is a Lock
   private isLock(): boolean {
     return this.type === 'LOCK' ? true : false;
@@ -174,12 +190,7 @@ export class AdGuardHomePlatformAccessory {
     }
   }
   async setOnWithoutTimer(value: CharacteristicValue) {
-    if (this.isGlinet) {
-      await this.setGlinetState(!!value);
-    } else {
-      await this.setAGHState(!!value);
-    }
-
+    await this.setAGHState(!!value);
     this.targetState = value === this.onState ? this.onState : this.offState;
     this.updateState();
   }
@@ -187,7 +198,7 @@ export class AdGuardHomePlatformAccessory {
   async getOnLock(): Promise<CharacteristicValue> {
     // To avoid long API call causing plugins to become unresponsive
     const run = async () => {
-      const status = this.isGlinet ? await this.getGlinetState() : await this.getAGHState();
+      const status = await this.getAGHState();
 
       if (status === undefined) {
         this.currentState = this.jammedState;
@@ -207,10 +218,10 @@ export class AdGuardHomePlatformAccessory {
   // Looping state
   private loopState() {
     const run = async () => {
-      const status = this.isGlinet ? await this.getGlinetState() : await this.getAGHState();
+      const status = await this.getAGHState();
       const update = () => {
-        this.updateState();
         this.targetState = this.currentState === this.onState ? this.onState : this.offState;
+        this.updateState();
       };
 
       if (status === this.onState) {
@@ -233,30 +244,24 @@ export class AdGuardHomePlatformAccessory {
   // Update Homekit status
   private updateState() {
     if (this.isLock()) {
-      const currentState = this.currentState === this.onState ? this.onState : this.offState;
+      this.service
+        .getCharacteristic(this.hap.Characteristic.LockCurrentState)
+        .updateValue(this.currentState);
+      this.service
+        .getCharacteristic(this.hap.Characteristic.LockTargetState)
+        .updateValue(this.targetState);
 
-      if (currentState !== this.targetState) {
-        this.service
-          .getCharacteristic(this.hap.Characteristic.LockCurrentState)
-          .updateValue(this.currentState);
-        this.service
-          .getCharacteristic(this.hap.Characteristic.LockTargetState)
-          .updateValue(this.targetState);
-
-        if (this.stateLogging) {
-          // eslint-disable-next-line max-len
-          this.log(`🛡️ - ${this.name} - Current status: ${this.currentState === this.jammedState ? '🔐 Jammed' : this.currentState === this.onState ? '🔒 Locked' : '🔓 Unlocked'}`);
-        }
+      if (this.stateLogging) {
+        // eslint-disable-next-line max-len
+        this.log(`🛡️ - ${this.name} - Current status: ${this.currentState === this.jammedState ? '🔐 Jammed' : this.currentState === this.onState ? '🔒 Locked' : '🔓 Unlocked'}`);
       }
     } else {
-      if (this.currentState !== this.targetState) {
-        this.service
-          .getCharacteristic(this.hap.Characteristic.On)
-          .updateValue(this.currentState);
+      this.service
+        .getCharacteristic(this.hap.Characteristic.On)
+        .updateValue(this.currentState);
 
-        if (this.stateLogging) {
-          this.log(`🛡️ - ${this.name} - Current status: ${this.currentState ? '🔒 Locked' : '🔓 Unlocked'}`);
-        }
+      if (this.stateLogging) {
+        this.log(`🛡️ - ${this.name} - Current status: ${this.currentState ? '🔒 Locked' : '🔓 Unlocked'}`);
       }
     }
   }
@@ -350,21 +355,25 @@ export class AdGuardHomePlatformAccessory {
   // Get AdGuard Home state
   private async getAGHState() {
     try {
-      if (this.gotInstance) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response: any = await this.gotInstance('status').json();
-
-        if (response) {
-          if (this.debug) {
-            this.log.info(`🐞 - ${this.name} - AdGuard: ${this.onOff(response.running)}, DNS: ${this.onOff(response.protection_enabled)}`);
-          }
-          return response.protection_enabled === true;
-        } else {
-          throw new Error(`Get - ${response}`);
+      if (this.isGlinet) {
+        const sid = await this.getGlinetSid();
+        if (sid === undefined) {
+          throw new Error('Authorization failed');
         }
-      } else {
-        throw new Error('Get');
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response: any = await this.gotInstance('status').json();
+
+      if (response) {
+        if (this.debug) {
+          this.log.info(`🐞 - ${this.name} - AdGuard: ${this.onOff(response.running)}, DNS: ${this.onOff(response.protection_enabled)}`);
+        }
+        return response.protection_enabled === true;
+      } else {
+        throw new Error(`${response}`);
+      }
+
     } catch (error) {
       if (this.debug) {
         this.log.info(`🐞 - ${this.name} - Get - Disconnected - ${error}`);
@@ -376,16 +385,19 @@ export class AdGuardHomePlatformAccessory {
   }
   private async setAGHState(state: boolean) {
     try {
-      if (this.gotInstance) {
-        await this.gotInstance('dns_config', {
-          method: 'POST',
-          json: {
-            protection_enabled: !!state,
-          },
-        }).json();
-      } else {
-        throw new Error('Set');
+      if (this.isGlinet) {
+        const sid = await this.getGlinetSid();
+        if (sid === undefined) {
+          throw new Error('Authorization failed');
+        }
       }
+
+      await this.gotInstance('protection', {
+        method: 'POST',
+        json: {
+          enabled: !!state,
+        },
+      }).json();
     } catch (error) {
       if (this.debug) {
         this.log.info(`🐞 - ${this.name} - Set - Disconnected - ${error}`);
@@ -399,7 +411,7 @@ export class AdGuardHomePlatformAccessory {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response: any = await got
-        .post(this.rpc, {
+        .post(this.glinetUrl, {
           json: {
             jsonrpc: '2.0',
             method: 'challenge',
@@ -455,7 +467,7 @@ export class AdGuardHomePlatformAccessory {
       if (hash_value) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response: any = await got
-          .post(this.rpc, {
+          .post(this.glinetUrl, {
             json: {
               jsonrpc: '2.0',
               method: 'login',
@@ -491,71 +503,8 @@ export class AdGuardHomePlatformAccessory {
       this.glinetSid = undefined;
     }, 4 * 1000 * 60);
 
+    this.gotInstance = got.extend(this.gotOptions(this.glinetSid));
     return this.glinetSid;
-  }
-  // Get GliNet AdGuard Home state
-  private async getGlinetState() {
-    try {
-      const sid = await this.getGlinetSid();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await got.post(this.rpc, {
-        json: {
-          jsonrpc: '2.0',
-          method: 'call',
-          params: [sid, 'adguardhome', 'get_config'],
-          id: 0,
-        },
-      }).json();
-
-      if (response.result) {
-        if (this.debug) {
-          this.log.info(`🐞 - ${this.name} - AdGuard: ${this.onOff(response.result.enabled)}, DNS: ${this.onOff(response.result.dns_enabled)}`);
-        }
-
-        // Return AdGuard Home state
-        return response.result.enabled && response.result.dns_enabled;
-      } else {
-        throw new Error(response);
-      }
-    } catch (error) {
-      if (this.debug) {
-        this.log.info(`🐞 - ${this.name} - Get - Disconnected - ${error}`);
-      }
-    }
-
-    // Connection error -> Jammed
-    return undefined;
-  }
-  // Set GliNet AdGuard Home state
-  private async setGlinetState(state: boolean) {
-    try {
-      const sid = await this.getGlinetSid();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await got.post(this.rpc, {
-        json: {
-          jsonrpc: '2.0',
-          method: 'call',
-          params: [
-            sid,
-            'adguardhome',
-            'set_config',
-            {
-              enabled: true,
-              dns_enabled: state,
-            },
-          ],
-          id: 0,
-        },
-      }).json();
-
-      if (!response.result) {
-        throw new Error(`Set - ${response.error.message}`);
-      }
-    } catch (error) {
-      if (this.debug) {
-        this.log.info(`🐞 - ${this.name} - Set - Disconnected - ${error}`);
-      }
-    }
   }
 
   // Pretty print boolean
