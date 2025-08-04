@@ -129,7 +129,9 @@ export class AdGuardHomePlatformAccessory {
     }
 
     // Main loop
-    this.loopState();
+    setInterval(() => {
+      this.updateState();
+    }, this.interval);
 
     // Check if there is previous unfinished timer, and run it again
     this.checkRunningTimer();
@@ -176,73 +178,68 @@ export class AdGuardHomePlatformAccessory {
 
   // Default Set and Get
   async getOn(): Promise<CharacteristicValue> {
+    // No await to avoid long wait from API calls.
+    // this.updateState() is called to get faster AdGuard Home state instead of waiting for the next loop.
+    this.updateState();
+
+    // Characteristic LockTargetState and On only accept secure/unsecure or true/false, 
+    // current state need to be converted into those two states.
     return this.currentState === this.onState ? this.onState : this.offState;
   }
   async setOn(value: CharacteristicValue) {
     await this.setOnWithoutTimer(value);
 
-    // Check timer
+    // Reset timer
     this.resetTimer();
 
-    // Do the timer
+    // Do the timer if exist
     if (this.autoOnTimer > 0 && value === this.offState) {
       this.runTimer(this.autoOnTimer);
     }
   }
   async setOnWithoutTimer(value: CharacteristicValue) {
-    await this.setAGHState(!!value);
+    // Immedietly update HomeKit target state if current type is Lock
     this.targetState = value === this.onState ? this.onState : this.offState;
-    this.updateState();
+    if (this.isLock()) {
+      this.service
+        .getCharacteristic(this.hap.Characteristic.LockTargetState)
+        .updateValue(this.targetState);
+    }
+
+    // API call, convert value to boolean
+    await this.setAGHState(!!value);
+
+    if (this.stateLogging) {
+      this.log(`🛡️ - ${this.name} - Set to: ${this.targetState === this.onState ? '🔒 Locked' : '🔓 Unlocked'}`);
+    }
+
+    // Update the result
+    await this.updateState();
   }
   // Lock Get
   async getOnLock(): Promise<CharacteristicValue> {
-    // To avoid long API call causing plugins to become unresponsive
-    const run = async () => {
-      const status = await this.getAGHState();
-
-      if (status === undefined) {
-        this.currentState = this.jammedState;
-      } else {
-        this.currentState = status ? this.onState : this.offState;
-      }
-    };
-    run();
-
-    this.service
-      .getCharacteristic(this.hap.Characteristic.LockCurrentState)
-      .updateValue(this.currentState);
+    // No await to avoid long wait from API calls.
+    // this.updateState() is called to get faster AdGuard Home state instead of waiting for the next loop.
+    this.updateState();
 
     return this.currentState;
   }
 
-  // Looping state
-  private loopState() {
-    const run = async () => {
-      const status = await this.getAGHState();
-      const update = () => {
-        this.targetState = this.currentState === this.onState ? this.onState : this.offState;
-        this.updateState();
-      };
+  // Get up to date AdGuard Home state and then update Homekit status
+  private async updateState() {
+    const status = await this.getAGHState();
 
-      if (status === this.onState) {
-        this.resetTimer();
-      }
+    // Update current status
+    this.currentState = status === true ? this.onState : status === false ? this.offState : this.jammedState;
+    // Remove timer when AdGuard Home state is on
+    if (this.currentState === this.onState) {
+      this.resetTimer();
+    }
+    // Update target state when it's not jammed
+    if (this.currentState !== this.jammedState) {
+      this.targetState = this.currentState;
+    }
 
-      if (status !== this.currentState) {
-        this.currentState = status === true ? this.onState : status === false ? this.offState : this.jammedState;
-
-        if (status === this.onState) {
-          update();
-        }
-      } else {
-        update();
-      }
-    };
-
-    setInterval(run, this.interval);
-  }
-  // Update Homekit status
-  private updateState() {
     if (this.isLock()) {
       this.service
         .getCharacteristic(this.hap.Characteristic.LockCurrentState)
@@ -253,7 +250,7 @@ export class AdGuardHomePlatformAccessory {
 
       if (this.stateLogging) {
         // eslint-disable-next-line max-len
-        this.log(`🛡️ - ${this.name} - Current status: ${this.currentState === this.jammedState ? '🔐 Jammed' : this.currentState === this.onState ? '🔒 Locked' : '🔓 Unlocked'}`);
+        this.log(`${this.currentState === this.jammedState ? '🔐' : this.currentState === this.onState ? '🔒' : '🔓'} - ${this.name} is ${this.currentState === this.jammedState ? 'Jammed' : this.currentState === this.onState ? 'Locked' : 'Unlocked'}`);
       }
     } else {
       this.service
@@ -261,7 +258,7 @@ export class AdGuardHomePlatformAccessory {
         .updateValue(this.currentState);
 
       if (this.stateLogging) {
-        this.log(`🛡️ - ${this.name} - Current status: ${this.currentState ? '🔒 Locked' : '🔓 Unlocked'}`);
+        this.log(`${this.currentState ? '🔒' : '🔓'} - ${this.name} is ${this.currentState ? 'Locked' : 'Unlocked'}`);
       }
     }
   }
@@ -271,24 +268,26 @@ export class AdGuardHomePlatformAccessory {
   private runTimer(timer: number, check = false) {
     timer = Math.round(timer * 100) / 100;
 
-    this.log.info(`⏲️ - ${this.name} - ${check ? 'Unfinished timer, ' : ''}AdGuardHome will be locked in ${timer} minute${timer > 1 ? 's' : ''}`);
+    this.log.info(`⏰ - ${this.name} - ${check ? 'Unfinished timer, ' : ''}AdGuard Home will be locked in ${timer} minute${timer > 1 ? 's' : ''}`);
 
     const offTimer = new Date().getTime() + timer * 1000 * 60;
     this.writeTimerStorage(`${offTimer}`);
 
     this.autoOnHandler = setTimeout(() => {
-      this.log.info(`⏲️ - ${this.name} - The ${timer} minute${timer > 1 ? 's' : ''} timer finish`);
+      this.log.info(`⏰ - ${this.name} - The ${timer} minute${timer > 1 ? 's' : ''} timer finish`);
       this.setOnWithoutTimer(this.onState);
-      this.autoOnHandler = undefined;
-      this.writeTimerStorage('0');
+      this.resetTimer();
     }, timer * 1000 * 60);
   }
   // Reset timer
   private resetTimer() {
     if (this.autoOnHandler !== undefined) {
-      this.log.info(`⏲️ - ${this.name} - Clearing previous timer`);
+      if (this.stateLogging) {
+        this.log.info(`⏰ - ${this.name} - Resetting timer`);
+      }
       this.writeTimerStorage('0');
       clearTimeout(this.autoOnHandler);
+      this.autoOnHandler = undefined;
     }
   }
   // Check if there is unfinished timer, usefull when server got restarted when a timer is running
@@ -395,7 +394,7 @@ export class AdGuardHomePlatformAccessory {
       await this.gotInstance('protection', {
         method: 'POST',
         json: {
-          enabled: !!state,
+          enabled: state,
         },
       }).json();
     } catch (error) {
