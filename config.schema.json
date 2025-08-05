@@ -194,7 +194,7 @@
         }
       ]
     },
-    { 
+    {
       "key": "debug",
       "type": "boolean",
       "default": false
