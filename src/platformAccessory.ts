@@ -189,8 +189,9 @@ export class AdGuardHomePlatformAccessory {
       this.targetState = this.currentState;
     }
 
-    // Ignore the first reported jammed state
-    if (skipUpdateValues) {
+    // Ignore the first reported jammed state for stable HomeKit report when using GL-iNet auth.
+    // The GL-iNet SID could be expired when someone login into GL-iNet web UI, causing a short glitch.
+    if (this.isGlinet && skipUpdateValues) {
       if (this.stateLogging) {
         this.log(`🛡️ - ${this.name} - Jammed detected.`);
       }
@@ -219,6 +220,7 @@ export class AdGuardHomePlatformAccessory {
       }
     }
   }
+
 
   // 
   // Helpers
