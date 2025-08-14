@@ -18,7 +18,7 @@
               "title": "Name",
               "type": "string",
               "required": true,
-              "description": "Please provide unique name for each configuration. Name is can be use to send command with Siri."
+              "description": "Please provide unique name for each configuration. Name  can be use to send command with Siri."
             },
             "host": {
               "title": "IP Address/Hostname",
@@ -35,11 +35,18 @@
               "description": "Use HTTPS to connect to AdGuard Home."
             },
             "port": {
-              "title": "Port",
+              "title": "AdGuard Home Port",
+              "type": "integer",
+              "required": false,
+              "default": 3000,
+              "description": "AdGuard Home port. If you're using GL-iNet router, the default port is 3000."
+            },
+            "glinetport": {
+              "title": "Gl-iNet Port",
               "type": "integer",
               "required": false,
               "default": 80,
-              "description": "AdGuard Home port. If you're using GL-iNet router, the default port is 3000."
+              "description": "Gl-iNet web UI port, default port is 80. Leave it empty if you're not using Gl-iNet router."
             },
             "username": {
               "title": "Username",
@@ -131,11 +138,15 @@
               "items": [
                 {
                   "key": "accessories[].host",
-                  "flex": "2 2 66.66%"
+                  "flex": "2 2 50%"
                 },
                 {
                   "key": "accessories[].port",
-                  "flex": "1 1 33.33%"
+                  "flex": "1 1 25%"
+                },
+                {
+                  "key": "accessories[].glinetport",
+                  "flex": "1 1 25%"
                 }
               ]
             },

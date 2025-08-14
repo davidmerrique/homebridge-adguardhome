@@ -13,15 +13,15 @@ Display AdGuard Home as a lock or switch accessory.
 ## Notes
 
 1. When updating from 1.5.1 to 1.6.0 you might need to re-add your accessories again in Home app.
-2. Version 2.0.0 introduce breaking changes, you need to remove old accessories, and add the new bridge and accessory in Home app.
+2. Version 2.0.0 introduce breaking changes, you need to remove your old accessories and add the new bridge and accessory in Home app. You also need to remove old configuration from config.json.
 
 ## Requirements
 
 - [Homebridge](https://github.com/homebridge/homebridge) HomeKit support for the impatient.
 - [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) Network-wide ads & trackers blocking DNS server, or
-- GL-iNet router with integrated AdGuard Home.
+- GL-iNet router with integrated AdGuard Home (*optional*).
 
-## Example config
+## config.json example
 
 ```json
 {
@@ -35,12 +35,13 @@ Display AdGuard Home as a lock or switch accessory.
     {
       "accessories": [
         {
-          "name": "AdGuard",
+          "name": "AdGuard Home",
           "username": "ADGUARD_USERNAME",
           "password": "ADGUARD_PASSWORD",
           "https": false,
           "host": "192.168.1.1",
-          "port": 80,
+          "port": 3000,
+          "glinetport": 80,
           "isGlinet": false,
           "interval": 5,
           "type": "LOCK",
@@ -51,7 +52,9 @@ Display AdGuard Home as a lock or switch accessory.
       "debug": false,
       "platform": "AdGuardHome"
     }
-  ]
+  ],
+  "disabledPlugins": [],
+  "accessories": []
 }
 ```
 
@@ -64,7 +67,8 @@ Accesories options:
 - "password": [**Mandatory**] The AdGuard Home login password. Default: *empty*.
 - "https": [*Optional*] To use HTTPS or regular HTTP. Default: HTTP.
 - "host": [*Optional*] Hostname or IP of the AdGuard Home server. Default: localhost.
-- "port": [*Optional*] The AdGuard Home server port. Default: 80.
+- "port": [*Optional*] The AdGuard Home server port. Default: 3000.
+- "glinetport": [*Optional*] The Gl-iNet router port. Default: 80.
 - "isGlinet": [*Optional"] Plugins will use GL-iNet router API to connect to AdGuard Home server. However the status will not be reflected inside AdGuard Home web interface, instead will be reflected inside GL-iNet web interface. Default: false.
 - "interval": [*Optional*] How often the plugins check the servers status, in seconds . Default: *5*.
 - "type": [*Optional*] Choose between SWITCH or LOCK. Default: *empty*.

@@ -2,7 +2,7 @@
   "name": "homebridge-adguardhome",
   "displayName": "Homebridge AdGuard Home",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.0.1-beta.1",
   "description": "Homebridge plugin for AdGuard Home",
   "author": "davidmerrique",
   "maintainers": [
