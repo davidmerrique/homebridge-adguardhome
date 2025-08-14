@@ -42,11 +42,11 @@
               "description": "AdGuard Home port. If you're using GL-iNet router, the default port is 3000."
             },
             "glinetport": {
-              "title": "Gl-iNet Port",
+              "title": "GL-iNet Port",
               "type": "integer",
               "required": false,
               "default": 80,
-              "description": "Gl-iNet web UI port, default port is 80. Leave it empty if you're not using Gl-iNet router."
+              "description": "Gl-iNet web UI port, default port is 80. Leave it empty if you're not using GL-iNet router."
             },
             "username": {
               "title": "Username",
@@ -59,7 +59,7 @@
               "title": "Password",
               "type": "string",
               "required": true,
-              "description": "AdGuard Home password. For GL-iNet router, type your the web login password."
+              "description": "AdGuard Home password. For GL-iNet router, type your web login password."
             },
             "isGlinet": {
               "title": "GL-iNet Router",
