@@ -23,7 +23,8 @@ export class AdGuardHomePlatformAccessory {
   private readonly username: string;
   private readonly password: string;
   private readonly host: string;
-  private readonly port: string;
+  private readonly port: number;
+  private readonly glinetPort: number;
   private readonly https: boolean;
   private readonly url: string;
   private readonly glinetUrl: string;
@@ -67,11 +68,12 @@ export class AdGuardHomePlatformAccessory {
     this.serial = config['serial-number'] || '123-456-789';
     this.username = config.username || '';
     this.password = config.password || '';
-    this.host = config.host || 'localhost';
-    this.port = config.port || 80;
     this.https = !!config.https;
+    this.host = config.host || 'localhost';
+    this.port = config.port || 3000;
     this.url = `http${this.https ? 's' : ''}://${this.host}:${this.port}`;
-    this.glinetUrl = `http${this.https ? 's' : ''}://${this.host}:80/rpc`;
+    this.glinetPort = config.glinetport || 80;
+    this.glinetUrl = `http${this.https ? 's' : ''}://${this.host}:${this.glinetPort}/rpc`;
     this.isGlinet = config.isGlinet || false;
     this.interval = config.interval || 5;
     this.interval = this.interval * 1000;
