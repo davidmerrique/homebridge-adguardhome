@@ -12,11 +12,11 @@ Display AdGuard Home as a lock or switch accessory.
 
 ## Before Installing
 
-1. When updating from 1.5.1 to 1.6.0 you might need to re-add your accessories again in Home app.
-2. Version 2.0.0 introduce breaking changes:
-    1. Remove any homebridge-adguardhome old accessories and add the new bridge and accessory in Home app.
-    2. Remove old homebridge-adguardhome old from config.json. The old configuration should be inside `accessories: []`.
-    3. Restart Homebridge and Homebridge Config UI X for changes to take effect, and before adding new homebridge-adguardhome accesory from Homebridge Config UI X.
+1. When updating from v1.5.1 to v1.6.0 you might need to re-add your accessories again in Home app.
+2. Version v2.x.x introduce breaking changes, after updating from v1.x.x make sure to do this:
+    1. Remove any homebridge-adguardhome old accessories and add the new bridge and or accessory in Home app.
+    2. Remove old homebridge-adguardhome  from config.json. The old configuration should be inside `accessories: []`.
+    3. Restart Homebridge and Homebridge Config UI X for changes to take effect and before adding new homebridge-adguardhome accesory from Homebridge Config UI X.
 
 ## Requirements
 
