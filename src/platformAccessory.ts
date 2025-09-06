@@ -45,7 +45,6 @@ export class AdGuardHomePlatformAccessory {
   private jammedState: CharacteristicValue;
 
   // Services
-  private autoOnHandler?: NodeJS.Timeout;
   private glinetSid?: string;
   private glinetSidTimeout?: NodeJS.Timeout;
   private gotInstance: Got;
@@ -350,6 +349,7 @@ export class AdGuardHomePlatformAccessory {
       if (response.result) {
         const result = response.result;
         const alg = result.alg;
+        const hash = result['hash-method'];
         const salt = result.salt;
         const nonce = result.nonce;
 
@@ -361,7 +361,7 @@ export class AdGuardHomePlatformAccessory {
 
         // Step3: Generate hash values for login
         const data = `${this.username}:${cipherPassword}:${nonce}`;
-        const hash_value = createHash('md5').update(data).digest('hex');
+        const hash_value = createHash(hash ? hash : 'md5').update(data).digest('hex');
 
         if (this.debug) {
           this.log.info(`🐞 - ${this.name} - New hash - ${hash_value}`);
